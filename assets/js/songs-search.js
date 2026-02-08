@@ -3,12 +3,29 @@
   const qInput = document.getElementById('songsQ');
   const sortSelect = document.getElementById('songsSort');
   const perPageSelect = document.getElementById('songsPerPage');
+  const viewInput = document.getElementById('songsView');
   const pageInput = document.getElementById('songsPage');
   const suggestEl = document.getElementById('songsSuggest');
   const resultsEl = document.getElementById('songsResults');
   const pagerEl = document.getElementById('songsPager');
 
-  if (!form || !qInput || !sortSelect || !perPageSelect || !resultsEl || !pageInput) return;
+  if (!form || !qInput || !sortSelect || !perPageSelect || !resultsEl || !pageInput || !viewInput) return;
+
+  const viewButtons = Array.from(document.querySelectorAll('[data-songs-view]'));
+  const getView = () => {
+    const v = String(viewInput.value || 'tile').toLowerCase();
+    return v === 'list' ? 'list' : 'tile';
+  };
+
+  const setViewUi = (v) => {
+    viewInput.value = v;
+    viewButtons.forEach((b) => {
+      const on = String(b.dataset.songsView || '') === v;
+      b.classList.toggle('btn-secondary', on);
+      b.classList.toggle('btn-outline-secondary', !on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
 
   const buildApiUrl = () => {
     const url = new URL(window.location.origin + window.location.pathname);
@@ -46,6 +63,10 @@
     const page = String(Number(pageInput.value || 1) || 1);
     if (page !== '1') url.searchParams.set('page', page);
     else url.searchParams.delete('page');
+
+    const view = getView();
+    if (view !== 'tile') url.searchParams.set('view', view);
+    else url.searchParams.delete('view');
 
     window.history.replaceState({}, '', url.toString());
   };
@@ -115,6 +136,43 @@
     resultsEl.innerHTML = `<div class="row g-3" id="songsGrid">${cards.join('')}</div>`;
   };
 
+  const renderList = (songs) => {
+    if (!Array.isArray(songs) || songs.length === 0) {
+      resultsEl.innerHTML = '<div class="alert alert-info">No songs found.</div>';
+      return;
+    }
+
+    const rows = songs.map((s) => {
+      const cover = (s.cover_url || '').trim();
+      const coverHtml = cover
+        ? `<img src="${escapeAttr(cover)}" alt="" style="width:44px;height:44px;object-fit:cover;">`
+        : `<i class="bi bi-image" aria-hidden="true"></i>`;
+
+      return `
+        <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="?r=/song&id=${encodeURIComponent(
+          s.id
+        )}">
+          <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
+            ${coverHtml}
+          </div>
+          <div class="flex-grow-1 text-truncate">
+            <div class="fw-semibold text-truncate">${escapeHtml(s.title || '')}</div>
+            <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
+          </div>
+          <div class="text-muted small text-nowrap">${Number(s.play_count || 0)} plays</div>
+        </a>
+      `;
+    });
+
+    resultsEl.innerHTML = `<div class="list-group shadow-sm" id="songsList">${rows.join('')}</div>`;
+  };
+
+  const renderResults = (songs) => {
+    const v = getView();
+    if (v === 'list') renderList(songs);
+    else renderGrid(songs);
+  };
+
   const renderPager = (pager) => {
     if (!pagerEl) return;
     if (!pager || !pager.pages || pager.pages <= 1) {
@@ -178,7 +236,7 @@
       const data = await res.json();
       if (reqId !== lastReq) return;
       const songs = data.songs || [];
-      renderGrid(songs);
+      renderResults(songs);
       renderPager(data.pager || null);
       syncUrl();
       if (showSuggestions && (qInput.value || '').trim()) showSuggest(songs);
@@ -211,6 +269,15 @@
     fetchAndRender({ showSuggestions: false });
   });
 
+  viewButtons.forEach((b) => {
+    b.addEventListener('click', () => {
+      const v = String(b.dataset.songsView || 'tile');
+      setViewUi(v === 'list' ? 'list' : 'tile');
+      setPage(1);
+      fetchAndRender({ showSuggestions: false });
+    });
+  });
+
   form.addEventListener('submit', (e) => {
     // prevent full reload if JS is active
     e.preventDefault();
@@ -231,4 +298,7 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideSuggest();
   });
+
+  // Initialize toggle state.
+  setViewUi(getView());
 })();

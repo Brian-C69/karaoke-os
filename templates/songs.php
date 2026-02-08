@@ -2,7 +2,15 @@
 /** @var array $filters */
 /** @var array $songs */
 /** @var SimplePager $pager */
+/** @var string|null $view */
 $pager = $pager ?? new SimplePager(count($songs), 1, 20);
+$view = strtolower(trim((string)($view ?? ($_GET['view'] ?? 'tile'))));
+if (!in_array($view, ['tile', 'list'], true)) {
+  $view = 'tile';
+}
+$clearParams = ['r' => '/songs'];
+if ((int)$pager->perPage !== 20) $clearParams['per_page'] = (int)$pager->perPage;
+if ($view !== 'tile') $clearParams['view'] = $view;
 $params = [
   'r' => '/songs',
   'q' => (string)($filters['q'] ?? ''),
@@ -11,9 +19,14 @@ $params = [
 ];
 if (!empty($filters['artist'])) $params['artist'] = (string)$filters['artist'];
 if (!empty($filters['language'])) $params['language'] = (string)$filters['language'];
+if ($view !== 'tile') $params['view'] = $view;
 
 function songs_page_href(array $params, int $page): string {
   $params['page'] = $page;
+  return e(APP_BASE) . '/?' . http_build_query($params);
+}
+
+function songs_href(array $params): string {
   return e(APP_BASE) . '/?' . http_build_query($params);
 }
 ?>
@@ -25,7 +38,8 @@ function songs_page_href(array $params, int $page): string {
   <div class="card-body">
     <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end">
       <input type="hidden" name="r" value="/songs">
-      <div class="col-12 col-lg-6 position-relative">
+      <input type="hidden" name="view" id="songsView" value="<?= e($view) ?>">
+      <div class="col-12 col-lg-5 position-relative">
         <label class="form-label">Search</label>
         <input class="form-control" name="q" id="songsQ" placeholder="Search title/artist" value="<?= e((string)$filters['q']) ?>" autocomplete="off">
         <div class="list-group position-absolute w-100 shadow-sm d-none" id="songsSuggest" style="z-index: 5;"></div>
@@ -47,20 +61,28 @@ function songs_page_href(array $params, int $page): string {
         </select>
       </div>
       <input type="hidden" name="page" id="songsPage" value="<?= (int)$pager->page ?>">
-      <div class="col-12 col-lg-2 d-flex gap-2">
+      <div class="col-12 col-lg-3 d-flex gap-2">
         <button class="btn btn-outline-primary flex-grow-1" id="songsGo"><i class="bi bi-search me-1" aria-hidden="true"></i>Go</button>
-        <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/songs" title="Clear"><i class="bi bi-x-lg" aria-hidden="true"></i></a>
+        <div class="btn-group" role="group" aria-label="View mode">
+          <button type="button" class="btn btn-outline-secondary" data-songs-view="tile" title="Tile view" aria-label="Tile view" aria-pressed="<?= $view === 'tile' ? 'true' : 'false' ?>">
+            <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn-outline-secondary" data-songs-view="list" title="List view" aria-label="List view" aria-pressed="<?= $view === 'list' ? 'true' : 'false' ?>">
+            <i class="bi bi-list-ul" aria-hidden="true"></i>
+          </button>
+        </div>
+        <a class="btn btn-outline-secondary" href="<?= songs_href($clearParams) ?>" title="Clear"><i class="bi bi-x-lg" aria-hidden="true"></i></a>
       </div>
       <?php if (($filters['artist'] ?? '') !== ''): ?>
         <div class="col-12">
           <span class="badge text-bg-secondary">Artist: <?= e((string)$filters['artist']) ?></span>
-          <a class="ms-2 small" href="<?= e(APP_BASE) ?>/?r=/songs">Clear</a>
+          <a class="ms-2 small" href="<?= songs_href($clearParams) ?>">Clear</a>
         </div>
       <?php endif; ?>
       <?php if (($filters['language'] ?? '') !== ''): ?>
         <div class="col-12">
           <span class="badge text-bg-secondary">Language: <?= e((string)$filters['language']) ?></span>
-          <a class="ms-2 small" href="<?= e(APP_BASE) ?>/?r=/songs">Clear</a>
+          <a class="ms-2 small" href="<?= songs_href($clearParams) ?>">Clear</a>
         </div>
       <?php endif; ?>
     </form>
@@ -71,26 +93,47 @@ function songs_page_href(array $params, int $page): string {
   <?php if (!$songs): ?>
     <div class="alert alert-info">No songs found.</div>
   <?php else: ?>
-    <div class="row g-3" id="songsGrid">
-      <?php foreach ($songs as $s): ?>
-        <div class="col-6 col-md-4 col-lg-3">
-          <a class="card song-card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
-            <div class="cover">
+    <?php if ($view === 'list'): ?>
+      <div class="list-group shadow-sm" id="songsList">
+        <?php foreach ($songs as $s): ?>
+          <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
+            <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
               <?php if (!empty($s['cover_url'])): ?>
-                <img src="<?= e((string)$s['cover_url']) ?>" alt="">
+                <img src="<?= e((string)$s['cover_url']) ?>" alt="" style="width:44px;height:44px;object-fit:cover;">
               <?php else: ?>
-                <div class="placeholder"><i class="bi bi-image me-1" aria-hidden="true"></i>No cover</div>
+                <i class="bi bi-image" aria-hidden="true"></i>
               <?php endif; ?>
             </div>
-            <div class="card-body">
-              <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
+            <div class="flex-grow-1 text-truncate">
+              <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
               <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
-              <div class="text-muted small"><?= (int)$s['play_count'] ?> plays</div>
             </div>
+            <div class="text-muted small text-nowrap"><?= (int)$s['play_count'] ?> plays</div>
           </a>
-        </div>
-      <?php endforeach; ?>
-    </div>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+      <div class="row g-3" id="songsGrid">
+        <?php foreach ($songs as $s): ?>
+          <div class="col-6 col-md-4 col-lg-3">
+            <a class="card song-card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
+              <div class="cover">
+                <?php if (!empty($s['cover_url'])): ?>
+                  <img src="<?= e((string)$s['cover_url']) ?>" alt="">
+                <?php else: ?>
+                  <div class="placeholder"><i class="bi bi-image me-1" aria-hidden="true"></i>No cover</div>
+                <?php endif; ?>
+              </div>
+              <div class="card-body">
+                <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
+                <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
+                <div class="text-muted small"><?= (int)$s['play_count'] ?> plays</div>
+              </div>
+            </a>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   <?php endif; ?>
 </div>
 

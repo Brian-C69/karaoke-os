@@ -146,6 +146,10 @@ switch ($route) {
             'language' => trim((string)($_GET['language'] ?? '')),
             'sort' => trim((string)($_GET['sort'] ?? 'latest')),
         ];
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
+        }
         $page = max(1, (int)($_GET['page'] ?? 1));
         $perPage = (int)($_GET['per_page'] ?? 20);
         if ($perPage <= 0) {
@@ -156,6 +160,7 @@ switch ($route) {
         $pager = new SimplePager($total, $page, $perPage);
         render('songs', [
             'filters' => $filters,
+            'view' => $view,
             'pager' => $pager,
             'songs' => find_songs($db, $filters, $pager->limit(), $pager->offset()),
         ]);
