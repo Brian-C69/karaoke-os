@@ -1,0 +1,16 @@
+# Basic hardening for a simple PHP app (Apache + XAMPP).
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(?:src|templates|data|lib)/ - [F,L]
+</IfModule>
+
+# Block direct access to app internals.
+<FilesMatch "^(?:\\.env|\\.ini|composer\\.(?:json|lock)|package(?:-lock)?\\.json|yarn\\.lock)$">
+  Require all denied
+</FilesMatch>
+
+<FilesMatch "^(?:config\\.(?:local|sample)\\.php)$">
+  Require all denied
+</FilesMatch>
