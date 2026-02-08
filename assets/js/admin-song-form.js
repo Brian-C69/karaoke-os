@@ -150,6 +150,25 @@
     }
   };
 
+  const prefillMostRecentArtist = async () => {
+    if (!artistInput || !artistSuggest) return;
+    if (getExcludeId()) return; // edit mode: don't change current artist
+    if ((artistInput.value || '').trim()) return;
+    try {
+      const url = new URL(window.location.origin + window.location.pathname);
+      url.searchParams.set('r', '/admin/api/artist-suggest');
+      url.searchParams.set('q', '');
+      const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+      const data = await res.json();
+      const items = data.items || [];
+      if (!Array.isArray(items) || items.length === 0) return;
+      artistInput.value = String(items[0] || '').trim();
+      hideSuggest(artistSuggest);
+    } catch {
+      // ignore
+    }
+  };
+
   const suggestSongs = async () => {
     if (!titleInput || !titleSuggest) return;
     const q = (titleInput.value || '').trim();
@@ -376,6 +395,18 @@
       if (el === titleInput) suggestSongs();
     });
   });
+
+  // If artist suggestions are open, accept the top (most recent) one on Enter.
+  if (artistInput && artistSuggest) {
+    artistInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const open = !artistSuggest.classList.contains('d-none');
+      const first = artistSuggest.querySelector('button.list-group-item');
+      if (!open || !first) return;
+      e.preventDefault();
+      first.click();
+    });
+  }
   if (driveInput) {
     driveInput.addEventListener('input', scheduleDupes);
     driveInput.addEventListener('blur', checkDupes);
@@ -409,4 +440,6 @@
   } else {
     setCoverPreview('');
   }
+
+  prefillMostRecentArtist();
 })();

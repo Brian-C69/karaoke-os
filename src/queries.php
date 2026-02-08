@@ -158,17 +158,25 @@ function suggest_artists(PDO $db, string $q, int $limit = 10): array
 {
     $q = trim($q);
     if ($q === '') {
-        $stmt = $db->prepare('SELECT DISTINCT artist FROM songs WHERE is_active = 1 ORDER BY artist ASC LIMIT :lim');
+        $stmt = $db->prepare(
+            'SELECT artist
+             FROM songs
+             WHERE is_active = 1 AND TRIM(artist) <> \'\'
+             GROUP BY artist
+             ORDER BY MAX(updated_at) DESC, artist ASC
+             LIMIT :lim'
+        );
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
         $stmt->execute();
         return array_map(fn ($r) => (string)$r['artist'], $stmt->fetchAll());
     }
 
     $stmt = $db->prepare(
-        'SELECT DISTINCT artist
+        'SELECT artist
          FROM songs
          WHERE is_active = 1 AND artist LIKE :q
-         ORDER BY artist ASC
+         GROUP BY artist
+         ORDER BY MAX(updated_at) DESC, artist ASC
          LIMIT :lim'
     );
     $stmt->bindValue(':q', '%' . $q . '%', PDO::PARAM_STR);
