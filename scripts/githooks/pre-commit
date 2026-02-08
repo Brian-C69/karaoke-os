@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+set -eu
+
+if ! command -v php >/dev/null 2>&1; then
+  echo "pre-commit: php not found; skipping version bump" >&2
+  exit 0
+fi
+
+php scripts/bump-version.php patch >/dev/null
+git add VERSION README.md >/dev/null 2>&1 || true
+

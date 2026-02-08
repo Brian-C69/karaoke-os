@@ -83,9 +83,9 @@ $backHref = e(APP_BASE) . '/?' . http_build_query($backParams);
 
         <div class="col-12 d-none" id="dupBox">
           <div class="alert alert-warning mb-0">
-            <div class="fw-semibold mb-2"><i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Possible duplicate</div>
+            <div class="fw-semibold mb-2"><i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Duplicate detected</div>
             <ul class="mb-0" id="dupList"></ul>
-            <div class="text-muted small mt-2">Submit is disabled until you change the fields.</div>
+            <div class="text-muted small mt-2">Checked by Title + Artist (case-insensitive) and Drive link. Submit is disabled until you change the fields.</div>
           </div>
         </div>
       </div>

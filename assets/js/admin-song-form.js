@@ -120,6 +120,16 @@
     return { title, artist, drive };
   };
 
+  const getExcludeId = () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const id = Number(params.get('id') || 0);
+      return Number.isFinite(id) && id > 0 ? id : 0;
+    } catch {
+      return 0;
+    }
+  };
+
   let lookupTimer = null;
   let dupTimer = null;
   let artistTimer = null;
@@ -163,7 +173,7 @@
 
   const checkDupes = async () => {
     const { title, artist, drive } = getParams();
-    if (!title || !artist || !drive) {
+    if (!title || !artist) {
       setDupes([]);
       return;
     }
@@ -172,7 +182,9 @@
       url.searchParams.set('r', '/admin/api/song-check');
       url.searchParams.set('title', title);
       url.searchParams.set('artist', artist);
-      url.searchParams.set('drive', drive);
+      if (drive) url.searchParams.set('drive', drive);
+      const excludeId = getExcludeId();
+      if (excludeId) url.searchParams.set('exclude_id', String(excludeId));
       const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
       const data = await res.json();
       setDupes(data.matches || []);

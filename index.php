@@ -465,13 +465,17 @@ switch ($route) {
         $title = trim((string)($_GET['title'] ?? ''));
         $artist = trim((string)($_GET['artist'] ?? ''));
         $drive = trim((string)($_GET['drive'] ?? ''));
+        $excludeId = (int)($_GET['exclude_id'] ?? 0);
+        if ($excludeId <= 0) {
+            $excludeId = 0;
+        }
         $fileId = $drive !== '' ? (drive_extract_file_id($drive) ?? '') : '';
         if ($title === '' || $artist === '') {
             echo json_encode(['ok' => true, 'matches' => []], JSON_UNESCAPED_SLASHES);
             exit;
         }
         $driveUrl = is_safe_external_url($drive) ? $drive : null;
-        $matches = find_song_duplicates($db, null, $title, $artist, $fileId !== '' ? $fileId : null, $driveUrl);
+        $matches = find_song_duplicates($db, $excludeId > 0 ? $excludeId : null, $title, $artist, $fileId !== '' ? $fileId : null, $driveUrl);
         echo json_encode(['ok' => true, 'matches' => $matches], JSON_UNESCAPED_SLASHES);
         exit;
 

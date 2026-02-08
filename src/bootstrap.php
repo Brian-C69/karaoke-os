@@ -15,6 +15,7 @@ define('APP_BASE', rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] 
 
 require __DIR__ . '/db.php';
 require __DIR__ . '/helpers.php';
+require __DIR__ . '/version.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/queries.php';
 require __DIR__ . '/google_drive.php';
@@ -22,3 +23,5 @@ require __DIR__ . '/settings.php';
 require __DIR__ . '/smtp_mailer.php';
 require __DIR__ . '/music_metadata.php';
 require APP_ROOT . '/lib/SimplePager.php';
+
+define('APP_VERSION', app_version());

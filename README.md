@@ -2,6 +2,8 @@
 
 Simple local-first karaoke library browser + usage tracking.
 
+**Version:** 0.1.2
+
 ## What it does
 - Public can browse songs (artists, languages, Top 100 rankings).
 - Logged-in users can access the Google Drive MP4 link (and every play is logged for analytics).
@@ -32,3 +34,8 @@ This build redirects users to the saved Drive URL on play. Make sure your Drive 
 
 ## Email verification (SMTP via PHPMailer)
 Open Admin → Email (SMTP) and configure your SMTP host/port/credentials/from address, then send a test email.
+
+## Versioning (bump on every update)
+- Bump patch version: `php scripts/bump-version.php patch`
+- Optional auto-bump on `git commit`:
+  - `git config core.hooksPath scripts/githooks`

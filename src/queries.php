@@ -328,7 +328,7 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
     // Duplicate guard (server-side).
     $dupes = find_song_duplicates($db, $id, $title, $artist, $fileId, $driveUrl);
     if ($dupes) {
-        flash('danger', 'Possible duplicate detected (same title/artist or same Drive file).');
+        flash('danger', 'Duplicate detected (same Title + Artist, or same Drive link/file).');
         redirect('/?r=' . ($id ? '/admin/song-edit&id=' . $id : '/admin/song-new'));
     }
 
@@ -397,9 +397,12 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
 function find_song_duplicates(PDO $db, ?int $excludeId, string $title, string $artist, ?string $driveFileId, ?string $driveUrl): array
 {
     $sql = 'SELECT id, title, artist, drive_file_id FROM songs
-            WHERE (lower(title) = lower(:t) AND lower(artist) = lower(:a))
-               OR (:fid <> \'\' AND drive_file_id = :fid)
-               OR (:durl <> \'\' AND drive_url = :durl)
+            WHERE (
+                (lower(title) = lower(:t) AND lower(artist) = lower(:a))
+                OR (:fid <> \'\' AND drive_file_id = :fid)
+                OR (:durl <> \'\' AND drive_url = :durl)
+            )
+            AND id <> :exid
             ORDER BY id DESC
             LIMIT 10';
     $stmt = $db->prepare($sql);
@@ -408,15 +411,10 @@ function find_song_duplicates(PDO $db, ?int $excludeId, string $title, string $a
         ':a' => $artist,
         ':fid' => (string)($driveFileId ?? ''),
         ':durl' => (string)($driveUrl ?? ''),
+        ':exid' => (int)($excludeId ?? 0),
     ]);
     $rows = $stmt->fetchAll();
-    if (!$rows) {
-        return [];
-    }
-    if ($excludeId === null) {
-        return $rows;
-    }
-    return array_values(array_filter($rows, fn ($r) => (int)($r['id'] ?? 0) !== (int)$excludeId));
+    return $rows ?: [];
 }
 
 function admin_delete_song(PDO $db, int $id): void

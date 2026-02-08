@@ -1,0 +1,11 @@
+# Local config/secrets
+config.local.php
+
+# Local SQLite database
+data/karaoke.sqlite
+data/*.sqlite
+data/*.db
+
+# OS/Editor
+.DS_Store
+Thumbs.db
