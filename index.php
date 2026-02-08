@@ -16,7 +16,10 @@ switch ($route) {
     case '/':
         $pageTitle = 'Home';
         render('home', [
-            'stats' => get_home_stats($db),
+            'latestSongs' => find_songs($db, ['sort' => 'latest'], 10, 0),
+            'topSongs' => top_songs($db, 10),
+            'topArtists' => top_artists($db, 10),
+            'topLanguages' => array_slice(list_languages($db), 0, 10),
         ]);
         break;
 
@@ -189,20 +192,25 @@ switch ($route) {
             flash('danger', 'Song not found.');
             redirect('/?r=/songs');
         }
-        $url = trim((string)($song['drive_url'] ?? ''));
-        if ($url === '' && !empty($song['drive_file_id'])) {
-            $url = drive_view_url((string)$song['drive_file_id']);
+        $driveUrl = trim((string)($song['drive_url'] ?? ''));
+        $fileId = (string)($song['drive_file_id'] ?? '');
+        if ($fileId === '' && $driveUrl !== '') {
+            $fileId = drive_extract_file_id($driveUrl) ?? '';
         }
-        if ($url === '') {
-            flash('warning', 'This song has no link yet.');
+
+        $url = '';
+        if ($fileId !== '') {
+            $url = drive_preview_url($fileId);
+        } elseif ($driveUrl !== '' && is_safe_external_url($driveUrl)) {
+            $url = $driveUrl;
+        }
+
+        if ($url === '' || !is_safe_external_url($url)) {
+            flash('warning', 'This song has no playable link yet.');
             redirect('/?r=/song&id=' . $songId);
         }
 
         log_play($db, $songId, (int)current_user()['id']);
-        if (!is_safe_external_url($url)) {
-            flash('danger', 'Invalid link configured for this song.');
-            redirect('/?r=/song&id=' . $songId);
-        }
         header('Location: ' . $url, true, 302);
         exit;
 
@@ -256,6 +264,95 @@ switch ($route) {
         }, array_slice($songs, 0, 200));
         echo json_encode(['ok' => true, 'songs' => $songs, 'pager' => $pager->toArray()], JSON_UNESCAPED_SLASHES);
         exit;
+
+    case '/api/llm/songs':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
+        }
+        if (!defined('LLM_API_KEY') || trim((string)LLM_API_KEY) === '') {
+            json_response(['ok' => false, 'error' => 'llm_api_not_configured'], 501);
+        }
+        $auth = trim(request_header('Authorization'));
+        $key = trim(request_header('X-Api-Key'));
+        if ($key === '' && preg_match('/^Bearer\\s+(.+)$/i', $auth, $m)) {
+            $key = trim((string)$m[1]);
+        }
+        if ($key === '' || !hash_equals((string)LLM_API_KEY, $key)) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+
+        $input = read_json_body();
+        $dryRun = !empty($input['dry_run']);
+        $title = trim((string)($input['title'] ?? ''));
+        $artist = trim((string)($input['artist'] ?? ''));
+        $driveInput = trim((string)($input['drive'] ?? ''));
+        $language = trim((string)($input['language'] ?? ''));
+        $album = trim((string)($input['album'] ?? ''));
+        $coverUrl = trim((string)($input['cover_url'] ?? ''));
+        $isActive = array_key_exists('is_active', $input) ? (!empty($input['is_active']) ? 1 : 0) : 1;
+
+        if ($title === '' || $artist === '' || $driveInput === '') {
+            json_response(['ok' => false, 'error' => 'missing_required', 'fields' => ['title', 'artist', 'drive']], 400);
+        }
+
+        $fileId = drive_extract_file_id($driveInput);
+        $driveUrl = is_safe_external_url($driveInput) ? $driveInput : ($fileId ? drive_view_url($fileId) : null);
+        if (!$driveUrl || !is_safe_external_url($driveUrl)) {
+            json_response(['ok' => false, 'error' => 'invalid_drive'], 400);
+        }
+
+        $matches = find_song_duplicates($db, null, $title, $artist, $fileId, $driveUrl);
+        if ($matches) {
+            json_response(['ok' => false, 'error' => 'duplicate', 'matches' => $matches], 409);
+        }
+        if ($dryRun) {
+            json_response([
+                'ok' => true,
+                'mode' => 'check',
+                'normalized' => [
+                    'title' => $title,
+                    'artist' => $artist,
+                    'drive_url' => $driveUrl,
+                    'drive_file_id' => $fileId,
+                ],
+                'matches' => [],
+            ]);
+        }
+
+        if ($album === '' || $coverUrl === '' || $language === '') {
+            try {
+                $meta = lookup_song_metadata($title, $artist);
+                if (is_array($meta)) {
+                    if ($album === '' && !empty($meta['album'])) $album = (string)$meta['album'];
+                    if ($coverUrl === '' && !empty($meta['cover_url'])) $coverUrl = (string)$meta['cover_url'];
+                    if ($language === '' && !empty($meta['language'])) $language = (string)$meta['language'];
+                }
+            } catch (Throwable $e) {
+                // ignore
+            }
+        }
+
+        $now = now_db();
+        $stmt = $db->prepare(
+            'INSERT INTO songs (title, artist, language, album, cover_url, drive_url, drive_file_id, is_active, created_at, updated_at)
+             VALUES (:t, :a, :l, :al, :c, :d, :fid, :ia, :ca, :ua)'
+        );
+        $stmt->execute([
+            ':t' => $title,
+            ':a' => $artist,
+            ':l' => $language !== '' ? $language : null,
+            ':al' => $album !== '' ? $album : null,
+            ':c' => $coverUrl !== '' ? $coverUrl : null,
+            ':d' => $driveUrl,
+            ':fid' => $fileId,
+            ':ia' => $isActive,
+            ':ca' => $now,
+            ':ua' => $now,
+        ]);
+        $id = (int)$db->lastInsertId();
+        $song = get_song($db, $id);
+        json_response(['ok' => true, 'mode' => 'add', 'id' => $id, 'song' => $song], 201);
+        break;
 
     case '/admin':
         require_admin();

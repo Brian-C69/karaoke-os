@@ -150,25 +150,6 @@
     }
   };
 
-  const prefillMostRecentArtist = async () => {
-    if (!artistInput || !artistSuggest) return;
-    if (getExcludeId()) return; // edit mode: don't change current artist
-    if ((artistInput.value || '').trim()) return;
-    try {
-      const url = new URL(window.location.origin + window.location.pathname);
-      url.searchParams.set('r', '/admin/api/artist-suggest');
-      url.searchParams.set('q', '');
-      const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
-      const data = await res.json();
-      const items = data.items || [];
-      if (!Array.isArray(items) || items.length === 0) return;
-      artistInput.value = String(items[0] || '').trim();
-      hideSuggest(artistSuggest);
-    } catch {
-      // ignore
-    }
-  };
-
   const suggestSongs = async () => {
     if (!titleInput || !titleSuggest) return;
     const q = (titleInput.value || '').trim();
@@ -440,6 +421,4 @@
   } else {
     setCoverPreview('');
   }
-
-  prefillMostRecentArtist();
 })();

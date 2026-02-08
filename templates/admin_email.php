@@ -1,11 +1,7 @@
 <?php /** @var array $smtp */ ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h4 m-0"><i class="bi bi-envelope-at me-2" aria-hidden="true"></i>Admin · Email (SMTP)</h1>
+  <h1 class="h4 m-0"><i class="bi bi-envelope-at me-2" aria-hidden="true"></i>Admin · Email</h1>
   <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/admin">Admin home</a>
-</div>
-
-<div class="alert alert-info">
-  Uses PHPMailer (SMTP) for email verification. If SMTP is not enabled/configured, verification may fall back to showing a dev link (if enabled).
 </div>
 
 <div class="card shadow-sm">

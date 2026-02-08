@@ -31,8 +31,8 @@
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/email">
       <div class="card-body">
-        <div class="fw-semibold text-dark"><i class="bi bi-envelope-at me-2" aria-hidden="true"></i>Email (SMTP)</div>
-        <div class="text-muted small">Configure verification emails via PHPMailer.</div>
+        <div class="fw-semibold text-dark"><i class="bi bi-envelope-at me-2" aria-hidden="true"></i>Email</div>
+        <div class="text-muted small">Configure verification emails.</div>
       </div>
     </a>
   </div>

@@ -25,8 +25,12 @@ function count_songs(PDO $db, array $filters): int
         $params[':artist'] = $filters['artist'];
     }
     if (!empty($filters['language'])) {
-        $where[] = 'language = :language';
-        $params[':language'] = $filters['language'];
+        if ($filters['language'] === 'Unknown') {
+            $where[] = '(language IS NULL OR TRIM(language) = \'\')';
+        } else {
+            $where[] = 'language = :language';
+            $params[':language'] = $filters['language'];
+        }
     }
 
     $sql = 'SELECT COUNT(*) FROM songs WHERE ' . implode(' AND ', $where);
@@ -49,8 +53,12 @@ function find_songs(PDO $db, array $filters, int $limit = 500, int $offset = 0):
         $params[':artist'] = $filters['artist'];
     }
     if (!empty($filters['language'])) {
-        $where[] = 'language = :language';
-        $params[':language'] = $filters['language'];
+        if ($filters['language'] === 'Unknown') {
+            $where[] = '(s.language IS NULL OR TRIM(s.language) = \'\')';
+        } else {
+            $where[] = 's.language = :language';
+            $params[':language'] = $filters['language'];
+        }
     }
 
     $sort = $filters['sort'] ?? 'latest';

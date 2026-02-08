@@ -2,7 +2,7 @@
 
 Simple local-first karaoke library browser + usage tracking.
 
-**Version:** 0.1.3
+**Version:** 0.1.4
 
 ## What it does
 - Public can browse songs (artists, languages, Top 100 rankings).
@@ -34,6 +34,19 @@ This build redirects users to the saved Drive URL on play. Make sure your Drive 
 
 ## Email verification (SMTP via PHPMailer)
 Open Admin → Email (SMTP) and configure your SMTP host/port/credentials/from address, then send a test email.
+
+## LLM Song Add API (optional)
+This is a simple JSON API so an LLM/tool can add songs without using the admin UI.
+
+1. Set an API key in `config.local.php`:
+   - `define('LLM_API_KEY', 'change-me');`
+2. Call the endpoint (example):
+   - `POST http://localhost/karaoke-os/?r=/api/llm/songs`
+   - Header: `Authorization: Bearer change-me`
+   - JSON body:
+     - `{"title":"Honey Honey","artist":"ABBA","drive":"https://drive.google.com/file/d/FILE_ID/view"}`
+
+See `API_DOC.md` for full details (auth, errors, examples).
 
 ## Versioning (bump on every update)
 - Bump patch version: `php scripts/bump-version.php patch`

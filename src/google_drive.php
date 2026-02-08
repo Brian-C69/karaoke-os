@@ -224,4 +224,3 @@ function http_raw(string $method, string $url, array $headers, ?string $body): a
     }
     return ['status' => $status, 'body' => $respBody];
 }
-

@@ -28,6 +28,41 @@ function is_safe_external_url(string $url): bool
     return (bool)preg_match('#^https?://#i', $url);
 }
 
+function json_response(array $data, int $status = 200): void
+{
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data, JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+function read_json_body(): array
+{
+    $raw = (string)file_get_contents('php://input');
+    if ($raw === '') {
+        return [];
+    }
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : [];
+}
+
+function request_header(string $name): string
+{
+    $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+    $val = (string)($_SERVER[$key] ?? '');
+    if ($val !== '') {
+        return $val;
+    }
+    // Some servers pass Authorization here.
+    if (strtolower($name) === 'authorization') {
+        $val = (string)($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+        if ($val !== '') {
+            return $val;
+        }
+    }
+    return '';
+}
+
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf'])) {

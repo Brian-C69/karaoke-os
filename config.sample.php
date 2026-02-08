@@ -14,6 +14,9 @@ declare(strict_types=1);
 // define('EMAIL_FROM', 'no-reply@yourdomain.com');
 // define('DEV_SHOW_VERIFICATION_LINK', false);
 
+// LLM integration (optional)
+// define('LLM_API_KEY', 'change-me');
+
 // Google Drive (service account)
 // define('DRIVE_SERVICE_ACCOUNT_JSON', __DIR__ . '/data/service-account.json');
 // define('DRIVE_ENFORCE_PERMISSION_ON_PLAY', true);

@@ -21,6 +21,12 @@ if (!defined('DEV_SHOW_VERIFICATION_LINK')) {
     define('DEV_SHOW_VERIFICATION_LINK', true);
 }
 
+// LLM integration (optional)
+// Used for a simple JSON API that can add songs via an API key.
+if (!defined('LLM_API_KEY')) {
+    define('LLM_API_KEY', ''); // set in config.local.php
+}
+
 // Google Drive (service account)
 // Tip: share the Drive folder/files with the service account email as Viewer/Editor as needed.
 if (!defined('DRIVE_SERVICE_ACCOUNT_JSON')) {

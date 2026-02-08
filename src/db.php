@@ -134,6 +134,7 @@ function migrate_schema(PDO $db): void
     $db->exec('CREATE INDEX IF NOT EXISTS idx_drive_grants_user_id ON drive_grants(user_id);');
     $db->exec('CREATE INDEX IF NOT EXISTS idx_drive_grants_song_id ON drive_grants(song_id);');
     $db->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_drive_grants_unique ON drive_grants(song_id, user_id, file_id);');
+
 }
 
 function table_has_column(PDO $db, string $table, string $column): bool
