@@ -58,7 +58,7 @@ function played_at_text(array $s, string $mode): string {
       <input type="hidden" name="r" value="/recent">
       <input type="hidden" name="view" id="songsView" value="<?= e($view) ?>">
 
-      <div class="col-12 col-lg-4 position-relative">
+      <div class="col-12 col-lg-3 position-relative">
         <label class="form-label">Search</label>
         <input class="form-control" name="q" id="songsQ" placeholder="Search title/artist" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
         <div class="list-group position-absolute w-100 shadow-sm d-none" id="songsSuggest" style="z-index: 5;"></div>
@@ -91,7 +91,7 @@ function played_at_text(array $s, string $mode): string {
       </div>
 
       <input type="hidden" name="page" id="songsPage" value="<?= (int)$pager->page ?>">
-      <div class="col-12 col-lg-2 d-flex gap-2">
+      <div class="col-12 col-lg-3 d-flex gap-2">
         <button class="btn btn-outline-primary flex-grow-1" id="songsGo"><i class="bi bi-search me-1" aria-hidden="true"></i>Go</button>
         <div class="btn-group" role="group" aria-label="View mode">
           <button type="button" class="btn btn-outline-secondary" data-songs-view="tile" title="Tile view" aria-label="Tile view" aria-pressed="<?= $view === 'tile' ? 'true' : 'false' ?>">
@@ -218,4 +218,3 @@ function played_at_text(array $s, string $mode): string {
 </div>
 
 <script src="<?= e(APP_BASE) ?>/assets/js/songs-search.js"></script>
-
