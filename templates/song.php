@@ -3,6 +3,8 @@
 /** @var int $playCount */
 /** @var array|null $artistRow */
 /** @var array|null $user */
+/** @var bool|null $favorited */
+$favorited = !empty($favorited);
 ?>
 <div class="d-flex align-items-center justify-content-end mb-3">
   <a class="btn btn-outline-secondary btn-sm"
@@ -26,7 +28,22 @@
   <div class="col-md-8">
     <div class="card shadow-sm">
       <div class="card-body">
-        <h1 class="h4 mb-1"><i class="bi bi-music-note-beamed me-2" aria-hidden="true"></i><?= e((string)$song['title']) ?></h1>
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+          <h1 class="h4 m-0 text-truncate">
+            <i class="bi bi-music-note-beamed me-2" aria-hidden="true"></i><?= e((string)$song['title']) ?>
+          </h1>
+          <?php if (!empty($user)): ?>
+            <button type="button"
+                    class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $favorited ? 'text-danger' : 'text-muted' ?>"
+                    data-song-id="<?= (int)$song['id'] ?>"
+                    data-favorited="<?= $favorited ? '1' : '0' ?>"
+                    aria-label="Favorite"
+                    aria-pressed="<?= $favorited ? 'true' : 'false' ?>"
+                    title="<?= $favorited ? 'Remove from favorites' : 'Add to favorites' ?>">
+              <i class="bi <?= $favorited ? 'bi-heart-fill' : 'bi-heart' ?>" aria-hidden="true"></i>
+            </button>
+          <?php endif; ?>
+        </div>
         <div class="text-muted mb-3">
           <?php if (!empty($artistRow['id'])): ?>
             <a class="link-secondary text-decoration-none"
@@ -62,11 +79,16 @@
             <a href="<?= e(APP_BASE) ?>/?r=/login" class="alert-link">Login</a>
           </div>
         <?php else: ?>
-          <form method="post" action="<?= e(APP_BASE) ?>/?r=/play" class="d-inline" target="_blank">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form method="post" action="<?= e(APP_BASE) ?>/?r=/play" class="d-inline" target="_blank">
             <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="id" value="<?= (int)$song['id'] ?>">
             <button class="btn btn-primary"><i class="bi bi-play-circle me-1" aria-hidden="true"></i>Play</button>
-          </form>
+            </form>
+            <button type="button" class="btn btn-outline-secondary" id="addToPlaylistBtn" data-song-id="<?= (int)$song['id'] ?>">
+              <i class="bi bi-collection-play me-1" aria-hidden="true"></i>Add to playlist
+            </button>
+          </div>
           <?php if (empty($song['drive_url']) && empty($song['drive_file_id'])): ?>
             <div class="text-muted small mt-2">Admin hasn’t added the link yet.</div>
           <?php else: ?>
@@ -77,3 +99,41 @@
     </div>
   </div>
 </div>
+
+<?php if (!empty($user)): ?>
+  <div class="modal fade" id="playlistModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-collection-play me-2" aria-hidden="true"></i>Add to playlist</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <div class="list-group" data-playlist-list></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Choose playlist</label>
+            <select class="form-select" data-playlist-select></select>
+          </div>
+          <div class="border-top pt-3">
+            <label class="form-label">Or create a new playlist</label>
+            <div class="d-flex gap-2">
+              <input class="form-control" placeholder="Playlist name" data-playlist-create-name>
+              <button type="button" class="btn btn-outline-primary" data-playlist-create-btn>
+                <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Create & add
+              </button>
+            </div>
+          </div>
+          <div class="mt-2" data-playlist-msg></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-playlist-add-btn>
+            <i class="bi bi-check2 me-1" aria-hidden="true"></i>Add
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>

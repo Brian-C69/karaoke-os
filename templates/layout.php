@@ -10,11 +10,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($pageTitle) ?> · Karaoke OS</title>
+  <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="<?= e(APP_BASE) ?>/assets/css/app.css" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body class="bg-light" data-auth="<?= $user ? '1' : '0' ?>">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand" href="<?= e(APP_BASE) ?>/?r=/"><i class="bi bi-mic-fill me-2" aria-hidden="true"></i>Karaoke OS</a>
@@ -30,6 +31,8 @@
         </ul>
         <ul class="navbar-nav">
           <?php if ($user): ?>
+            <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/favorites"><i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i>Favorites</a></li>
+            <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/playlists"><i class="bi bi-collection-play me-1" aria-hidden="true"></i>Playlists</a></li>
             <?php if (($user['role'] ?? '') === 'admin'): ?>
               <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/admin"><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Admin</a></li>
             <?php endif; ?>
@@ -58,6 +61,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="<?= e(APP_BASE) ?>/assets/js/song-actions.js"></script>
   <footer class="border-top py-3">
     <div class="container small text-muted d-flex align-items-center justify-content-between">
       <div>Karaoke OS</div>

@@ -4,11 +4,13 @@
 /** @var array $songs */
 /** @var SimplePager $pager */
 /** @var string $view */
+/** @var array $favoriteIds */
 
 $view = strtolower(trim((string)($view ?? 'tile')));
 if (!in_array($view, ['tile', 'list'], true)) {
   $view = 'tile';
 }
+$favoriteIds = is_array($favoriteIds ?? null) ? $favoriteIds : [];
 
 $artistImage = trim((string)($artist['image_url'] ?? ''));
 $artistImageIsExternal = $artistImage !== '' && is_safe_external_url($artistImage);
@@ -42,7 +44,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
 
 <div class="card shadow-sm mb-3">
   <div class="card-body">
-    <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/artist">
+    <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/artist" data-api-route="/api/songs">
       <input type="hidden" name="r" value="/artist">
       <input type="hidden" name="id" value="<?= (int)$artist['id'] ?>">
       <input type="hidden" name="artist" id="songsArtistFixed" value="<?= e((string)$artist['name']) ?>">
@@ -96,7 +98,9 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
       <div class="list-group shadow-sm" id="songsList">
         <?php foreach ($songs as $s): ?>
           <?php $flag = language_flag_url((string)($s['language'] ?? '')); ?>
-          <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
+          <?php $isFav = !empty($favoriteIds[(int)$s['id']]); ?>
+          <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 position-relative song-item">
+            <a class="stretched-link" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>" aria-label="Open song"></a>
             <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
               <?php if (!empty($s['cover_url'])): ?>
                 <img src="<?= e((string)$s['cover_url']) ?>" alt="" style="width:44px;height:44px;object-fit:cover;">
@@ -105,7 +109,20 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
               <?php endif; ?>
             </div>
             <div class="flex-grow-1 text-truncate">
-              <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
+                <?php if (!empty($user)): ?>
+                  <button type="button"
+                          class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $isFav ? 'text-danger' : 'text-muted' ?>"
+                          data-song-id="<?= (int)$s['id'] ?>"
+                          data-favorited="<?= $isFav ? '1' : '0' ?>"
+                          aria-label="Favorite"
+                          aria-pressed="<?= $isFav ? 'true' : 'false' ?>"
+                          title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>">
+                    <i class="bi <?= $isFav ? 'bi-heart-fill' : 'bi-heart' ?>" aria-hidden="true"></i>
+                  </button>
+                <?php endif; ?>
+              </div>
               <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
             </div>
             <div class="d-flex align-items-center gap-2 text-muted small text-nowrap">
@@ -114,7 +131,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
               <?php endif; ?>
               <span><?= (int)$s['play_count'] ?> plays</span>
             </div>
-          </a>
+          </div>
         <?php endforeach; ?>
       </div>
     <?php else: ?>
@@ -122,7 +139,9 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
         <?php foreach ($songs as $s): ?>
           <?php $flag = language_flag_url((string)($s['language'] ?? '')); ?>
           <div class="col-6 col-md-4 col-lg-3">
-            <a class="card song-card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
+            <?php $isFav = !empty($favoriteIds[(int)$s['id']]); ?>
+            <div class="card song-card h-100 shadow-sm position-relative song-item">
+              <a class="stretched-link" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>" aria-label="Open song"></a>
               <div class="cover">
                 <?php if (!empty($s['cover_url'])): ?>
                   <img src="<?= e((string)$s['cover_url']) ?>" alt="">
@@ -131,7 +150,20 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
                 <?php endif; ?>
               </div>
               <div class="card-body">
-                <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                  <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
+                  <?php if (!empty($user)): ?>
+                    <button type="button"
+                            class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $isFav ? 'text-danger' : 'text-muted' ?>"
+                            data-song-id="<?= (int)$s['id'] ?>"
+                            data-favorited="<?= $isFav ? '1' : '0' ?>"
+                            aria-label="Favorite"
+                            aria-pressed="<?= $isFav ? 'true' : 'false' ?>"
+                            title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>">
+                      <i class="bi <?= $isFav ? 'bi-heart-fill' : 'bi-heart' ?>" aria-hidden="true"></i>
+                    </button>
+                  <?php endif; ?>
+                </div>
                 <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
                 <div class="d-flex align-items-center justify-content-between text-muted small">
                   <div><?= (int)$s['play_count'] ?> plays</div>
@@ -142,7 +174,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
                   </div>
                 </div>
               </div>
-            </a>
+            </div>
           </div>
         <?php endforeach; ?>
       </div>

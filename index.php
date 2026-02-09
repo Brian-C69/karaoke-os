@@ -158,11 +158,15 @@ switch ($route) {
         $perPage = min(100, $perPage);
         $total = count_songs($db, $filters);
         $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_songs($db, $filters, $pager->limit(), $pager->offset());
+        $user = current_user();
+        $favoriteIds = $user ? favorite_song_ids($db, (int)$user['id'], array_map(fn ($s) => (int)$s['id'], $songs)) : [];
         render('songs', [
             'filters' => $filters,
             'view' => $view,
             'pager' => $pager,
-            'songs' => find_songs($db, $filters, $pager->limit(), $pager->offset()),
+            'songs' => $songs,
+            'favoriteIds' => $favoriteIds,
         ]);
         break;
 
@@ -176,10 +180,17 @@ switch ($route) {
             break;
         }
         $pageTitle = $song['title'];
+        $u = current_user();
+        $fav = false;
+        if ($u) {
+            $set = favorite_song_ids($db, (int)$u['id'], [$songId]);
+            $fav = !empty($set[$songId]);
+        }
         render('song', [
             'song' => $song,
             'artistRow' => get_artist_by_name($db, (string)($song['artist'] ?? '')),
             'playCount' => (int)get_song_play_count($db, $songId),
+            'favorited' => $fav,
         ]);
         break;
 
@@ -277,13 +288,17 @@ switch ($route) {
         $perPage = min(100, $perPage);
         $total = count_songs($db, $filters);
         $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_songs($db, $filters, $pager->limit(), $pager->offset());
+        $user = current_user();
+        $favoriteIds = $user ? favorite_song_ids($db, (int)$user['id'], array_map(fn ($s) => (int)$s['id'], $songs)) : [];
 
         render('artist', [
             'artist' => $artist,
             'filters' => $filters,
             'view' => $view,
             'pager' => $pager,
-            'songs' => find_songs($db, $filters, $pager->limit(), $pager->offset()),
+            'songs' => $songs,
+            'favoriteIds' => $favoriteIds,
         ]);
         break;
 
@@ -306,6 +321,103 @@ switch ($route) {
         ]);
         break;
 
+    case '/favorites':
+        require_login();
+        $pageTitle = 'Favorites';
+        $filters = [
+            'q' => trim((string)($_GET['q'] ?? '')),
+            'artist' => trim((string)($_GET['artist'] ?? '')),
+            'language' => trim((string)($_GET['language'] ?? '')),
+            'sort' => trim((string)($_GET['sort'] ?? 'latest')),
+        ];
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
+        }
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        $perPage = min(100, $perPage);
+        $uid = (int)current_user()['id'];
+        $total = count_favorite_songs($db, $uid, $filters);
+        $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_favorite_songs($db, $uid, $filters, $pager->limit(), $pager->offset());
+        $favoriteIds = [];
+        foreach ($songs as $s) $favoriteIds[(int)($s['id'] ?? 0)] = true;
+        render('favorites', [
+            'filters' => $filters,
+            'view' => $view,
+            'pager' => $pager,
+            'songs' => $songs,
+            'favoriteIds' => $favoriteIds,
+        ]);
+        break;
+
+    case '/playlists':
+        require_login();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_verify();
+            $name = trim((string)($_POST['name'] ?? ''));
+            if ($name === '') {
+                flash('danger', 'Playlist name is required.');
+                redirect('/?r=/playlists');
+            }
+            try {
+                create_playlist($db, (int)current_user()['id'], $name);
+                flash('success', 'Playlist created.');
+            } catch (Throwable $e) {
+                flash('danger', 'Could not create playlist (maybe duplicate name).');
+            }
+            redirect('/?r=/playlists');
+        }
+        $pageTitle = 'My Playlists';
+        render('playlists', [
+            'playlists' => list_playlists($db, (int)current_user()['id']),
+        ]);
+        break;
+
+    case '/playlist':
+        require_login();
+        $playlistId = (int)($_GET['id'] ?? 0);
+        $playlist = $playlistId > 0 ? get_playlist($db, (int)current_user()['id'], $playlistId) : null;
+        if (!$playlist) {
+            http_response_code(404);
+            $pageTitle = 'Not Found';
+            render('error', ['message' => 'Playlist not found.']);
+            break;
+        }
+        $pageTitle = (string)$playlist['name'];
+        $filters = [
+            'q' => trim((string)($_GET['q'] ?? '')),
+            'sort' => trim((string)($_GET['sort'] ?? 'latest')),
+        ];
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
+        }
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        $perPage = min(100, $perPage);
+        $uid = (int)current_user()['id'];
+        $total = count_playlist_songs($db, $uid, $playlistId, $filters);
+        $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_playlist_songs($db, $uid, $playlistId, $filters, $pager->limit(), $pager->offset());
+        $favoriteIds = favorite_song_ids($db, $uid, array_map(fn ($s) => (int)$s['id'], $songs));
+        render('playlist', [
+            'playlist' => $playlist,
+            'filters' => $filters,
+            'view' => $view,
+            'pager' => $pager,
+            'songs' => $songs,
+            'favoriteIds' => $favoriteIds,
+        ]);
+        break;
+
     case '/api/songs':
         header('Content-Type: application/json; charset=utf-8');
         $filters = [
@@ -323,7 +435,45 @@ switch ($route) {
         $total = count_songs($db, $filters);
         $pager = new SimplePager($total, $page, $perPage);
         $songs = find_songs($db, $filters, $pager->limit(), $pager->offset());
+        $u = current_user();
+        $favSet = $u ? favorite_song_ids($db, (int)$u['id'], array_map(fn ($s) => (int)$s['id'], $songs)) : [];
         // Keep payload small for AJAX.
+        $songs = array_map(static function (array $s) use ($favSet): array {
+            $lang = (string)($s['language'] ?? '');
+            $id = (int)($s['id'] ?? 0);
+            return [
+                'id' => $id,
+                'title' => (string)($s['title'] ?? ''),
+                'artist' => (string)($s['artist'] ?? ''),
+                'cover_url' => (string)($s['cover_url'] ?? ''),
+                'language' => $lang,
+                'language_flag' => language_flag_url($lang) ?: null,
+                'favorited' => !empty($favSet[$id]),
+                'play_count' => (int)($s['play_count'] ?? 0),
+            ];
+        }, array_slice($songs, 0, 200));
+        echo json_encode(['ok' => true, 'songs' => $songs, 'pager' => $pager->toArray()], JSON_UNESCAPED_SLASHES);
+        exit;
+
+    case '/api/favorites':
+        header('Content-Type: application/json; charset=utf-8');
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        $filters = [
+            'q' => trim((string)($_GET['q'] ?? '')),
+            'artist' => trim((string)($_GET['artist'] ?? '')),
+            'language' => trim((string)($_GET['language'] ?? '')),
+            'sort' => trim((string)($_GET['sort'] ?? 'latest')),
+        ];
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) $perPage = 20;
+        $perPage = min(100, $perPage);
+        $uid = (int)current_user()['id'];
+        $total = count_favorite_songs($db, $uid, $filters);
+        $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_favorite_songs($db, $uid, $filters, $pager->limit(), $pager->offset());
         $songs = array_map(static function (array $s): array {
             $lang = (string)($s['language'] ?? '');
             return [
@@ -333,11 +483,131 @@ switch ($route) {
                 'cover_url' => (string)($s['cover_url'] ?? ''),
                 'language' => $lang,
                 'language_flag' => language_flag_url($lang) ?: null,
+                'favorited' => true,
                 'play_count' => (int)($s['play_count'] ?? 0),
             ];
         }, array_slice($songs, 0, 200));
         echo json_encode(['ok' => true, 'songs' => $songs, 'pager' => $pager->toArray()], JSON_UNESCAPED_SLASHES);
         exit;
+
+    case '/api/playlist-songs':
+        header('Content-Type: application/json; charset=utf-8');
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        $playlistId = (int)($_GET['id'] ?? 0);
+        $filters = [
+            'q' => trim((string)($_GET['q'] ?? '')),
+            'sort' => trim((string)($_GET['sort'] ?? 'latest')),
+        ];
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) $perPage = 20;
+        $perPage = min(100, $perPage);
+        $uid = (int)current_user()['id'];
+        $total = count_playlist_songs($db, $uid, $playlistId, $filters);
+        $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_playlist_songs($db, $uid, $playlistId, $filters, $pager->limit(), $pager->offset());
+        $favSet = favorite_song_ids($db, $uid, array_map(fn ($s) => (int)$s['id'], $songs));
+        $songs = array_map(static function (array $s) use ($favSet): array {
+            $lang = (string)($s['language'] ?? '');
+            $id = (int)($s['id'] ?? 0);
+            return [
+                'id' => $id,
+                'title' => (string)($s['title'] ?? ''),
+                'artist' => (string)($s['artist'] ?? ''),
+                'cover_url' => (string)($s['cover_url'] ?? ''),
+                'language' => $lang,
+                'language_flag' => language_flag_url($lang) ?: null,
+                'favorited' => !empty($favSet[$id]),
+                'play_count' => (int)($s['play_count'] ?? 0),
+            ];
+        }, array_slice($songs, 0, 200));
+        echo json_encode(['ok' => true, 'songs' => $songs, 'pager' => $pager->toArray()], JSON_UNESCAPED_SLASHES);
+        exit;
+
+    case '/api/favorite/toggle':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
+        }
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        csrf_verify();
+        $songId = (int)($_POST['song_id'] ?? 0);
+        if ($songId <= 0 || !get_song($db, $songId)) {
+            json_response(['ok' => false, 'error' => 'song_not_found'], 404);
+        }
+        $favorited = toggle_favorite($db, (int)current_user()['id'], $songId);
+        json_response(['ok' => true, 'song_id' => $songId, 'favorited' => $favorited]);
+
+    case '/api/playlists':
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        $items = list_playlists($db, (int)current_user()['id']);
+        $items = array_map(static function (array $p): array {
+            return [
+                'id' => (int)($p['id'] ?? 0),
+                'name' => (string)($p['name'] ?? ''),
+                'song_count' => (int)($p['song_count'] ?? 0),
+            ];
+        }, $items);
+        json_response(['ok' => true, 'items' => $items]);
+
+    case '/api/playlists/create':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
+        }
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        csrf_verify();
+        $name = trim((string)($_POST['name'] ?? ''));
+        if ($name === '') {
+            json_response(['ok' => false, 'error' => 'missing_name'], 400);
+        }
+        try {
+            $id = create_playlist($db, (int)current_user()['id'], $name);
+            json_response(['ok' => true, 'id' => $id, 'name' => $name]);
+        } catch (Throwable $e) {
+            json_response(['ok' => false, 'error' => 'create_failed'], 409);
+        }
+
+    case '/api/playlists/add-song':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
+        }
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        csrf_verify();
+        $playlistId = (int)($_POST['playlist_id'] ?? 0);
+        $songId = (int)($_POST['song_id'] ?? 0);
+        if ($playlistId <= 0 || $songId <= 0) {
+            json_response(['ok' => false, 'error' => 'missing_fields'], 400);
+        }
+        if (!get_song($db, $songId)) {
+            json_response(['ok' => false, 'error' => 'song_not_found'], 404);
+        }
+        $added = add_song_to_playlist($db, (int)current_user()['id'], $playlistId, $songId);
+        json_response(['ok' => true, 'added' => $added]);
+
+    case '/api/playlists/remove-song':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
+        }
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        csrf_verify();
+        $playlistId = (int)($_POST['playlist_id'] ?? 0);
+        $songId = (int)($_POST['song_id'] ?? 0);
+        if ($playlistId <= 0 || $songId <= 0) {
+            json_response(['ok' => false, 'error' => 'missing_fields'], 400);
+        }
+        $removed = remove_song_from_playlist($db, (int)current_user()['id'], $playlistId, $songId);
+        json_response(['ok' => true, 'removed' => $removed]);
 
     case '/api/artists':
         header('Content-Type: application/json; charset=utf-8');

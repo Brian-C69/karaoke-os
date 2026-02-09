@@ -141,6 +141,297 @@ function log_play(PDO $db, int $songId, int $userId): void
     ]);
 }
 
+function favorite_song_ids(PDO $db, int $userId, array $songIds): array
+{
+    $userId = (int)$userId;
+    $songIds = array_values(array_filter(array_map('intval', $songIds), fn ($v) => $v > 0));
+    if ($userId <= 0 || !$songIds) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($songIds), '?'));
+    $sql = 'SELECT song_id FROM favorites WHERE user_id = ? AND song_id IN (' . $placeholders . ')';
+    $stmt = $db->prepare($sql);
+    $stmt->execute(array_merge([$userId], $songIds));
+    $rows = $stmt->fetchAll();
+    $set = [];
+    foreach ($rows as $r) {
+        $set[(int)($r['song_id'] ?? 0)] = true;
+    }
+    return $set;
+}
+
+function toggle_favorite(PDO $db, int $userId, int $songId): bool
+{
+    $userId = (int)$userId;
+    $songId = (int)$songId;
+    if ($userId <= 0 || $songId <= 0) {
+        return false;
+    }
+
+    $db->beginTransaction();
+    try {
+        $stmt = $db->prepare('SELECT id FROM favorites WHERE user_id = :u AND song_id = :s LIMIT 1');
+        $stmt->execute([':u' => $userId, ':s' => $songId]);
+        $existing = $stmt->fetchColumn();
+        if ($existing) {
+            $del = $db->prepare('DELETE FROM favorites WHERE user_id = :u AND song_id = :s');
+            $del->execute([':u' => $userId, ':s' => $songId]);
+            $db->commit();
+            return false;
+        }
+        $ins = $db->prepare('INSERT INTO favorites (user_id, song_id, created_at) VALUES (:u, :s, :t)');
+        $ins->execute([':u' => $userId, ':s' => $songId, ':t' => now_db()]);
+        $db->commit();
+        return true;
+    } catch (Throwable $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+function count_favorite_songs(PDO $db, int $userId, array $filters): int
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return 0;
+
+    $where = ['s.is_active = 1', 'f.user_id = :u'];
+    $params = [':u' => $userId];
+
+    if (!empty($filters['q'])) {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $filters['q'] . '%';
+    }
+    if (!empty($filters['artist'])) {
+        $where[] = 's.artist = :artist';
+        $params[':artist'] = $filters['artist'];
+    }
+    if (!empty($filters['language'])) {
+        if ($filters['language'] === 'Unknown') {
+            $where[] = '(s.language IS NULL OR TRIM(s.language) = \'\')';
+        } else {
+            $where[] = 's.language = :language';
+            $params[':language'] = $filters['language'];
+        }
+    }
+
+    $sql = 'SELECT COUNT(*) FROM favorites f INNER JOIN songs s ON s.id = f.song_id WHERE ' . implode(' AND ', $where);
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    return (int)$stmt->fetchColumn();
+}
+
+function find_favorite_songs(PDO $db, int $userId, array $filters, int $limit, int $offset): array
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return [];
+
+    $where = ['s.is_active = 1', 'f.user_id = :u'];
+    $params = [':u' => $userId];
+
+    if (!empty($filters['q'])) {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $filters['q'] . '%';
+    }
+    if (!empty($filters['artist'])) {
+        $where[] = 's.artist = :artist';
+        $params[':artist'] = $filters['artist'];
+    }
+    if (!empty($filters['language'])) {
+        if ($filters['language'] === 'Unknown') {
+            $where[] = '(s.language IS NULL OR TRIM(s.language) = \'\')';
+        } else {
+            $where[] = 's.language = :language';
+            $params[':language'] = $filters['language'];
+        }
+    }
+
+    $sort = $filters['sort'] ?? 'latest';
+    $orderBy = 's.updated_at DESC';
+    if ($sort === 'plays') {
+        $orderBy = 'play_count DESC, s.title ASC';
+    } elseif ($sort === 'title') {
+        $orderBy = 's.title ASC';
+    }
+
+    $sql = '
+        SELECT
+            s.*,
+            COALESCE(p.play_count, 0) AS play_count
+        FROM favorites f
+        INNER JOIN songs s ON s.id = f.song_id
+        LEFT JOIN (
+            SELECT song_id, COUNT(*) AS play_count
+            FROM plays
+            GROUP BY song_id
+        ) p ON p.song_id = s.id
+        WHERE ' . implode(' AND ', $where) . '
+        ORDER BY ' . $orderBy . '
+        LIMIT :lim OFFSET :off
+    ';
+
+    $stmt = $db->prepare($sql);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':lim', max(1, $limit), PDO::PARAM_INT);
+    $stmt->bindValue(':off', max(0, $offset), PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function list_playlists(PDO $db, int $userId): array
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return [];
+
+    $stmt = $db->prepare(
+        'SELECT
+            p.*,
+            COUNT(ps.id) AS song_count
+         FROM playlists p
+         LEFT JOIN playlist_songs ps ON ps.playlist_id = p.id
+         WHERE p.user_id = :u
+         GROUP BY p.id
+         ORDER BY p.updated_at DESC, p.name ASC'
+    );
+    $stmt->execute([':u' => $userId]);
+    return $stmt->fetchAll();
+}
+
+function create_playlist(PDO $db, int $userId, string $name): int
+{
+    $userId = (int)$userId;
+    $name = trim($name);
+    if ($userId <= 0 || $name === '') {
+        throw new InvalidArgumentException('Invalid playlist.');
+    }
+
+    $stmt = $db->prepare(
+        'INSERT INTO playlists (user_id, name, created_at, updated_at)
+         VALUES (:u, :n, :c, :u2)'
+    );
+    $now = now_db();
+    $stmt->execute([':u' => $userId, ':n' => $name, ':c' => $now, ':u2' => $now]);
+    return (int)$db->lastInsertId();
+}
+
+function get_playlist(PDO $db, int $userId, int $playlistId): ?array
+{
+    $stmt = $db->prepare(
+        'SELECT
+            p.*,
+            COUNT(ps.id) AS song_count
+         FROM playlists p
+         LEFT JOIN playlist_songs ps ON ps.playlist_id = p.id
+         WHERE p.id = :id AND p.user_id = :u
+         GROUP BY p.id
+         LIMIT 1'
+    );
+    $stmt->execute([':id' => (int)$playlistId, ':u' => (int)$userId]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function add_song_to_playlist(PDO $db, int $userId, int $playlistId, int $songId): bool
+{
+    $userId = (int)$userId;
+    $playlistId = (int)$playlistId;
+    $songId = (int)$songId;
+    if ($userId <= 0 || $playlistId <= 0 || $songId <= 0) return false;
+
+    $pl = get_playlist($db, $userId, $playlistId);
+    if (!$pl) return false;
+
+    $stmt = $db->prepare('INSERT OR IGNORE INTO playlist_songs (playlist_id, song_id, created_at) VALUES (:p, :s, :t)');
+    $stmt->execute([':p' => $playlistId, ':s' => $songId, ':t' => now_db()]);
+
+    $touch = $db->prepare('UPDATE playlists SET updated_at = :u WHERE id = :id');
+    $touch->execute([':u' => now_db(), ':id' => $playlistId]);
+
+    return $stmt->rowCount() > 0;
+}
+
+function remove_song_from_playlist(PDO $db, int $userId, int $playlistId, int $songId): bool
+{
+    $pl = get_playlist($db, $userId, $playlistId);
+    if (!$pl) return false;
+    $stmt = $db->prepare('DELETE FROM playlist_songs WHERE playlist_id = :p AND song_id = :s');
+    $stmt->execute([':p' => (int)$playlistId, ':s' => (int)$songId]);
+    if ($stmt->rowCount() > 0) {
+        $touch = $db->prepare('UPDATE playlists SET updated_at = :u WHERE id = :id');
+        $touch->execute([':u' => now_db(), ':id' => (int)$playlistId]);
+        return true;
+    }
+    return false;
+}
+
+function count_playlist_songs(PDO $db, int $userId, int $playlistId, array $filters): int
+{
+    $pl = get_playlist($db, $userId, $playlistId);
+    if (!$pl) return 0;
+
+    $where = ['s.is_active = 1', 'ps.playlist_id = :p'];
+    $params = [':p' => (int)$playlistId];
+
+    if (!empty($filters['q'])) {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $filters['q'] . '%';
+    }
+
+    $sql = 'SELECT COUNT(*) FROM playlist_songs ps INNER JOIN songs s ON s.id = ps.song_id WHERE ' . implode(' AND ', $where);
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    return (int)$stmt->fetchColumn();
+}
+
+function find_playlist_songs(PDO $db, int $userId, int $playlistId, array $filters, int $limit, int $offset): array
+{
+    $pl = get_playlist($db, $userId, $playlistId);
+    if (!$pl) return [];
+
+    $where = ['s.is_active = 1', 'ps.playlist_id = :p'];
+    $params = [':p' => (int)$playlistId];
+
+    if (!empty($filters['q'])) {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $filters['q'] . '%';
+    }
+
+    $sort = $filters['sort'] ?? 'latest';
+    $orderBy = 's.updated_at DESC';
+    if ($sort === 'plays') {
+        $orderBy = 'play_count DESC, s.title ASC';
+    } elseif ($sort === 'title') {
+        $orderBy = 's.title ASC';
+    }
+
+    $sql = '
+        SELECT
+            s.*,
+            COALESCE(p.play_count, 0) AS play_count
+        FROM playlist_songs ps
+        INNER JOIN songs s ON s.id = ps.song_id
+        LEFT JOIN (
+            SELECT song_id, COUNT(*) AS play_count
+            FROM plays
+            GROUP BY song_id
+        ) p ON p.song_id = s.id
+        WHERE ' . implode(' AND ', $where) . '
+        ORDER BY ' . $orderBy . '
+        LIMIT :lim OFFSET :off
+    ';
+
+    $stmt = $db->prepare($sql);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, $k === ':p' ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':lim', max(1, $limit), PDO::PARAM_INT);
+    $stmt->bindValue(':off', max(0, $offset), PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
 function upsert_artist(PDO $db, string $name): ?array
 {
     $name = trim($name);

@@ -12,3 +12,5 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-seri
 .lang-flag-circle { border-radius: 999px; }
 .lang-flag-lg { width: 56px; height: 56px; }
 .lang-flag-card { width: 100%; height: 100%; object-fit: cover; display: block; }
+.song-action { position: relative; z-index: 3; }
+.fav-btn { line-height: 1; }

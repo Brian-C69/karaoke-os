@@ -1,49 +1,50 @@
 <?php
+/** @var array $playlist */
 /** @var array $filters */
 /** @var array $songs */
 /** @var SimplePager $pager */
 /** @var string|null $view */
 /** @var array $favoriteIds */
+
 $pager = $pager ?? new SimplePager(count($songs), 1, 20);
 $view = strtolower(trim((string)($view ?? ($_GET['view'] ?? 'tile'))));
 if (!in_array($view, ['tile', 'list'], true)) {
   $view = 'tile';
 }
 $favoriteIds = is_array($favoriteIds ?? null) ? $favoriteIds : [];
-$clearParams = ['r' => '/songs'];
-if ((int)$pager->perPage !== 20) $clearParams['per_page'] = (int)$pager->perPage;
-if ($view !== 'tile') $clearParams['view'] = $view;
+
 $params = [
-  'r' => '/songs',
+  'r' => '/playlist',
+  'id' => (int)($playlist['id'] ?? 0),
   'q' => (string)($filters['q'] ?? ''),
   'sort' => (string)($filters['sort'] ?? 'latest'),
   'per_page' => (int)$pager->perPage,
 ];
-if (!empty($filters['artist'])) $params['artist'] = (string)$filters['artist'];
-if (!empty($filters['language'])) $params['language'] = (string)$filters['language'];
 if ($view !== 'tile') $params['view'] = $view;
 
-function songs_page_href(array $params, int $page): string {
+function playlist_page_href(array $params, int $page): string {
   $params['page'] = $page;
   return e(APP_BASE) . '/?' . http_build_query($params);
 }
-
-function songs_href(array $params): string {
-  return e(APP_BASE) . '/?' . http_build_query($params);
-}
 ?>
-<div class="mb-3">
-  <h1 class="h4 m-0"><i class="bi bi-music-note-list me-2" aria-hidden="true"></i>Songs</h1>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+  <div>
+    <h1 class="h4 m-0"><i class="bi bi-collection-play me-2" aria-hidden="true"></i><?= e((string)($playlist['name'] ?? 'Playlist')) ?></h1>
+    <div class="text-muted small"><?= (int)($playlist['song_count'] ?? 0) ?> songs</div>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/playlists"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
 </div>
 
 <div class="card shadow-sm mb-3">
   <div class="card-body">
-    <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/songs" data-api-route="/api/songs">
-      <input type="hidden" name="r" value="/songs">
+    <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/playlist" data-api-route="/api/playlist-songs">
+      <input type="hidden" name="r" value="/playlist">
+      <input type="hidden" name="id" value="<?= (int)($playlist['id'] ?? 0) ?>">
       <input type="hidden" name="view" id="songsView" value="<?= e($view) ?>">
       <div class="col-12 col-lg-5 position-relative">
         <label class="form-label">Search</label>
-        <input class="form-control" name="q" id="songsQ" placeholder="Search title/artist" value="<?= e((string)$filters['q']) ?>" autocomplete="off">
+        <input class="form-control" name="q" id="songsQ" placeholder="Search title/artist" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
         <div class="list-group position-absolute w-100 shadow-sm d-none" id="songsSuggest" style="z-index: 5;"></div>
       </div>
       <div class="col-12 col-lg-2">
@@ -77,25 +78,13 @@ function songs_href(array $params): string {
           <i class="bi bi-x-lg" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Cancel</span>
         </button>
       </div>
-      <?php if (($filters['artist'] ?? '') !== ''): ?>
-        <div class="col-12">
-          <span class="badge text-bg-secondary">Artist: <?= e((string)$filters['artist']) ?></span>
-          <a class="ms-2 small" href="<?= songs_href($clearParams) ?>" data-clear-param="artist">Clear</a>
-        </div>
-      <?php endif; ?>
-      <?php if (($filters['language'] ?? '') !== ''): ?>
-        <div class="col-12">
-          <span class="badge text-bg-secondary">Language: <?= e((string)$filters['language']) ?></span>
-          <a class="ms-2 small" href="<?= songs_href($clearParams) ?>" data-clear-param="language">Clear</a>
-        </div>
-      <?php endif; ?>
     </form>
   </div>
 </div>
 
 <div id="songsResults">
   <?php if (!$songs): ?>
-    <div class="alert alert-info">No songs found.</div>
+    <div class="alert alert-info">No songs in this playlist.</div>
   <?php else: ?>
     <?php if ($view === 'list'): ?>
       <div class="list-group shadow-sm" id="songsList">
@@ -114,17 +103,15 @@ function songs_href(array $params): string {
             <div class="flex-grow-1 text-truncate">
               <div class="d-flex align-items-center justify-content-between gap-2">
                 <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
-                <?php if (!empty($user)): ?>
-                  <button type="button"
-                          class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $isFav ? 'text-danger' : 'text-muted' ?>"
-                          data-song-id="<?= (int)$s['id'] ?>"
-                          data-favorited="<?= $isFav ? '1' : '0' ?>"
-                          aria-label="Favorite"
-                          aria-pressed="<?= $isFav ? 'true' : 'false' ?>"
-                          title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>">
-                    <i class="bi <?= $isFav ? 'bi-heart-fill' : 'bi-heart' ?>" aria-hidden="true"></i>
-                  </button>
-                <?php endif; ?>
+                <button type="button"
+                        class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $isFav ? 'text-danger' : 'text-muted' ?>"
+                        data-song-id="<?= (int)$s['id'] ?>"
+                        data-favorited="<?= $isFav ? '1' : '0' ?>"
+                        aria-label="Favorite"
+                        aria-pressed="<?= $isFav ? 'true' : 'false' ?>"
+                        title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>">
+                  <i class="bi <?= $isFav ? 'bi-heart-fill' : 'bi-heart' ?>" aria-hidden="true"></i>
+                </button>
               </div>
               <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
             </div>
@@ -141,8 +128,8 @@ function songs_href(array $params): string {
       <div class="row g-3" id="songsGrid">
         <?php foreach ($songs as $s): ?>
           <?php $flag = language_flag_url((string)($s['language'] ?? '')); ?>
+          <?php $isFav = !empty($favoriteIds[(int)$s['id']]); ?>
           <div class="col-6 col-md-4 col-lg-3">
-            <?php $isFav = !empty($favoriteIds[(int)$s['id']]); ?>
             <div class="card song-card h-100 shadow-sm position-relative song-item">
               <a class="stretched-link" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>" aria-label="Open song"></a>
               <div class="cover">
@@ -155,17 +142,15 @@ function songs_href(array $params): string {
               <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between gap-2">
                   <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
-                  <?php if (!empty($user)): ?>
-                    <button type="button"
-                            class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $isFav ? 'text-danger' : 'text-muted' ?>"
-                            data-song-id="<?= (int)$s['id'] ?>"
-                            data-favorited="<?= $isFav ? '1' : '0' ?>"
-                            aria-label="Favorite"
-                            aria-pressed="<?= $isFav ? 'true' : 'false' ?>"
-                            title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>">
-                      <i class="bi <?= $isFav ? 'bi-heart-fill' : 'bi-heart' ?>" aria-hidden="true"></i>
-                    </button>
-                  <?php endif; ?>
+                  <button type="button"
+                          class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $isFav ? 'text-danger' : 'text-muted' ?>"
+                          data-song-id="<?= (int)$s['id'] ?>"
+                          data-favorited="<?= $isFav ? '1' : '0' ?>"
+                          aria-label="Favorite"
+                          aria-pressed="<?= $isFav ? 'true' : 'false' ?>"
+                          title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>">
+                    <i class="bi <?= $isFav ? 'bi-heart-fill' : 'bi-heart' ?>" aria-hidden="true"></i>
+                  </button>
                 </div>
                 <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
                 <div class="d-flex align-items-center justify-content-between text-muted small">
@@ -187,18 +172,18 @@ function songs_href(array $params): string {
 
 <div id="songsPager" class="d-flex justify-content-center mt-4">
   <?php if ($pager->pages > 1): ?>
-    <nav aria-label="Songs pages">
+    <nav aria-label="Playlist pages">
       <ul class="pagination mb-0">
         <li class="page-item <?= $pager->hasPrev() ? '' : 'disabled' ?>">
-          <a class="page-link" href="<?= songs_page_href($params, $pager->prevPage()) ?>" data-page="<?= (int)$pager->prevPage() ?>">Prev</a>
+          <a class="page-link" href="<?= playlist_page_href($params, $pager->prevPage()) ?>" data-page="<?= (int)$pager->prevPage() ?>">Prev</a>
         </li>
         <?php foreach ($pager->window(2) as $p): ?>
           <li class="page-item <?= $p === $pager->page ? 'active' : '' ?>">
-            <a class="page-link" href="<?= songs_page_href($params, (int)$p) ?>" data-page="<?= (int)$p ?>"><?= (int)$p ?></a>
+            <a class="page-link" href="<?= playlist_page_href($params, (int)$p) ?>" data-page="<?= (int)$p ?>"><?= (int)$p ?></a>
           </li>
         <?php endforeach; ?>
         <li class="page-item <?= $pager->hasNext() ? '' : 'disabled' ?>">
-          <a class="page-link" href="<?= songs_page_href($params, $pager->nextPage()) ?>" data-page="<?= (int)$pager->nextPage() ?>">Next</a>
+          <a class="page-link" href="<?= playlist_page_href($params, $pager->nextPage()) ?>" data-page="<?= (int)$pager->nextPage() ?>">Next</a>
         </li>
       </ul>
     </nav>
@@ -206,3 +191,4 @@ function songs_href(array $params): string {
 </div>
 
 <script src="<?= e(APP_BASE) ?>/assets/js/songs-search.js"></script>
+

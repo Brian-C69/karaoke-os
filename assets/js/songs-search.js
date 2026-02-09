@@ -17,6 +17,8 @@
 
   const viewButtons = Array.from(document.querySelectorAll('[data-songs-view]'));
   const pageRoute = String(form.dataset.pageRoute || '/songs');
+  const apiRoute = String(form.dataset.apiRoute || '/api/songs');
+  const isAuthed = document.body?.dataset?.auth === '1';
   const getView = () => {
     const v = String(viewInput.value || 'tile').toLowerCase();
     return v === 'list' ? 'list' : 'tile';
@@ -34,11 +36,12 @@
 
   const buildApiUrl = () => {
     const url = new URL(window.location.origin + window.location.pathname);
-    url.searchParams.set('r', '/api/songs');
+    url.searchParams.set('r', apiRoute);
     url.searchParams.set('q', (qInput.value || '').trim());
     url.searchParams.set('sort', sortSelect.value || 'latest');
     url.searchParams.set('per_page', perPageSelect.value || '20');
     url.searchParams.set('page', pageInput.value || '1');
+    if (idFixedInput?.value) url.searchParams.set('id', String(idFixedInput.value));
 
     const params = new URLSearchParams(window.location.search);
     const artist = (artistFixedInput?.value || params.get('artist') || '').trim();
@@ -132,21 +135,38 @@
           )}" title="${escapeAttr(lang)}">`
         : '';
 
+      const favorited = !!s.favorited;
+      const favBtn = isAuthed
+        ? `
+          <button type="button"
+                  class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle ${favorited ? 'text-danger' : 'text-muted'}"
+                  data-song-id="${escapeAttr(s.id)}"
+                  data-favorited="${favorited ? '1' : '0'}"
+                  aria-label="Favorite"
+                  aria-pressed="${favorited ? 'true' : 'false'}"
+                  title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
+            <i class="bi ${favorited ? 'bi-heart-fill' : 'bi-heart'}" aria-hidden="true"></i>
+          </button>
+        `
+        : '';
+
       return `
         <div class="col-6 col-md-4 col-lg-3">
-          <a class="card song-card h-100 shadow-sm text-decoration-none" href="?r=/song&id=${encodeURIComponent(
-            s.id
-          )}">
+          <div class="card song-card h-100 shadow-sm position-relative song-item">
+            <a class="stretched-link" href="?r=/song&id=${encodeURIComponent(s.id)}" aria-label="Open song"></a>
             <div class="cover">${coverHtml}</div>
             <div class="card-body">
-              <div class="fw-semibold text-dark text-truncate">${escapeHtml(s.title || '')}</div>
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <div class="fw-semibold text-dark text-truncate">${escapeHtml(s.title || '')}</div>
+                ${favBtn}
+              </div>
               <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
               <div class="d-flex align-items-center justify-content-between text-muted small">
                 <div>${Number(s.play_count || 0)} plays</div>
                 <div>${flagHtml}</div>
               </div>
             </div>
-          </a>
+          </div>
         </div>
       `;
     });
@@ -173,21 +193,38 @@
           )}" title="${escapeAttr(lang)}">`
         : '';
 
+      const favorited = !!s.favorited;
+      const favBtn = isAuthed
+        ? `
+          <button type="button"
+                  class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle ${favorited ? 'text-danger' : 'text-muted'}"
+                  data-song-id="${escapeAttr(s.id)}"
+                  data-favorited="${favorited ? '1' : '0'}"
+                  aria-label="Favorite"
+                  aria-pressed="${favorited ? 'true' : 'false'}"
+                  title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
+            <i class="bi ${favorited ? 'bi-heart-fill' : 'bi-heart'}" aria-hidden="true"></i>
+          </button>
+        `
+        : '';
+
       return `
-        <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="?r=/song&id=${encodeURIComponent(
-          s.id
-        )}">
+        <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 position-relative song-item">
+          <a class="stretched-link" href="?r=/song&id=${encodeURIComponent(s.id)}" aria-label="Open song"></a>
           <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
             ${coverHtml}
           </div>
           <div class="flex-grow-1 text-truncate">
-            <div class="fw-semibold text-truncate">${escapeHtml(s.title || '')}</div>
+            <div class="d-flex align-items-center justify-content-between gap-2">
+              <div class="fw-semibold text-truncate">${escapeHtml(s.title || '')}</div>
+              ${favBtn}
+            </div>
             <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
           </div>
           <div class="d-flex align-items-center gap-2 text-muted small text-nowrap">${flagHtml}<span>${Number(
     s.play_count || 0
   )} plays</span></div>
-        </a>
+        </div>
       `;
     });
 
@@ -320,6 +357,40 @@
     hideSuggest();
     setPage(1);
     fetchAndRender({ showSuggestions: false });
+  });
+
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-clear-param]');
+    if (!a) return;
+    e.preventDefault();
+    const clearParam = String(a.dataset.clearParam || '').trim();
+    if (!clearParam) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('r', pageRoute);
+    if (idFixedInput?.value) url.searchParams.set('id', String(idFixedInput.value));
+
+    // Preserve current controls; drop the chosen param and reset to page 1.
+    url.searchParams.delete(clearParam);
+    url.searchParams.delete('page');
+
+    const q = (qInput.value || '').trim();
+    if (q) url.searchParams.set('q', q);
+    else url.searchParams.delete('q');
+
+    const sort = sortSelect.value || 'latest';
+    if (sort && sort !== 'latest') url.searchParams.set('sort', sort);
+    else url.searchParams.delete('sort');
+
+    const perPage = String(Number(perPageSelect.value || 20) || 20);
+    if (perPage !== '20') url.searchParams.set('per_page', perPage);
+    else url.searchParams.delete('per_page');
+
+    const view = getView();
+    if (view !== 'tile') url.searchParams.set('view', view);
+    else url.searchParams.delete('view');
+
+    window.location.href = url.toString();
   });
 
   pagerEl?.addEventListener('click', (e) => {

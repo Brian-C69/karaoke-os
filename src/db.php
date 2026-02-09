@@ -155,6 +155,49 @@ function migrate_schema(PDO $db): void
          FROM songs
          WHERE artist IS NOT NULL AND TRIM(artist) <> \'\';'
     );
+
+    // favorites + playlists
+    $db->exec(
+        'CREATE TABLE IF NOT EXISTS favorites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            song_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE,
+            UNIQUE(user_id, song_id)
+        );'
+    );
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_favorites_song_id ON favorites(song_id);');
+
+    $db->exec(
+        'CREATE TABLE IF NOT EXISTS playlists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL COLLATE NOCASE,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, name)
+        );'
+    );
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_playlists_user_id ON playlists(user_id);');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_playlists_updated_at ON playlists(updated_at);');
+
+    $db->exec(
+        'CREATE TABLE IF NOT EXISTS playlist_songs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            playlist_id INTEGER NOT NULL,
+            song_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+            FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE,
+            UNIQUE(playlist_id, song_id)
+        );'
+    );
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_playlist_songs_playlist_id ON playlist_songs(playlist_id);');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_playlist_songs_song_id ON playlist_songs(song_id);');
 }
 
 function table_has_column(PDO $db, string $table, string $column): bool
