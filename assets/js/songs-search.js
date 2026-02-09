@@ -127,9 +127,9 @@
       const lang = String(s.language || '').trim();
       const langFlag = String(s.language_flag || '').trim();
       const flagHtml = langFlag
-        ? `<span class="bg-dark bg-opacity-75 rounded-pill p-1 d-inline-flex"><img class="lang-flag lang-flag-xs lang-flag-circle" src="${escapeAttr(
-            langFlag
-          )}" alt="${escapeAttr(lang)}" title="${escapeAttr(lang)}"></span>`
+        ? `<img class="lang-flag lang-flag-xs lang-flag-circle" src="${escapeAttr(langFlag)}" alt="${escapeAttr(
+            lang
+          )}" title="${escapeAttr(lang)}">`
         : '';
 
       return `
@@ -137,14 +137,14 @@
           <a class="card song-card h-100 shadow-sm text-decoration-none" href="?r=/song&id=${encodeURIComponent(
             s.id
           )}">
-            <div class="cover position-relative">
-              ${coverHtml}
-              ${flagHtml ? `<div class="position-absolute bottom-0 end-0 m-2">${flagHtml}</div>` : ''}
-            </div>
+            <div class="cover">${coverHtml}</div>
             <div class="card-body">
               <div class="fw-semibold text-dark text-truncate">${escapeHtml(s.title || '')}</div>
               <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
-              <div class="text-muted small">${Number(s.play_count || 0)} plays</div>
+              <div class="d-flex align-items-center justify-content-between text-muted small">
+                <div>${Number(s.play_count || 0)} plays</div>
+                <div>${flagHtml}</div>
+              </div>
             </div>
           </a>
         </div>
