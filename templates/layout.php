@@ -11,6 +11,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($pageTitle) ?> · Karaoke OS</title>
   <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+  <link rel="icon" href="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png">
+  <link rel="apple-touch-icon" href="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="<?= e(APP_BASE) ?>/assets/css/app.css" rel="stylesheet">
@@ -18,7 +21,10 @@
 <body class="bg-light" data-auth="<?= $user ? '1' : '0' ?>">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-      <a class="navbar-brand" href="<?= e(APP_BASE) ?>/?r=/"><i class="bi bi-mic-fill me-2" aria-hidden="true"></i>Karaoke OS</a>
+      <a class="navbar-brand d-flex align-items-center" href="<?= e(APP_BASE) ?>/?r=/">
+        <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="" width="24" height="24" class="me-2" style="object-fit:contain;">
+        Karaoke OS
+      </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
         <span class="navbar-toggler-icon"></span>
       </button>
