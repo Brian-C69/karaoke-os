@@ -11,6 +11,7 @@
   const suggestEl = document.getElementById('songsSuggest');
   const resultsEl = document.getElementById('songsResults');
   const pagerEl = document.getElementById('songsPager');
+  const cancelBtn = document.getElementById('songsCancel');
 
   if (!form || !qInput || !sortSelect || !perPageSelect || !resultsEl || !pageInput || !viewInput) return;
 
@@ -288,6 +289,16 @@
   form.addEventListener('submit', (e) => {
     // prevent full reload if JS is active
     e.preventDefault();
+    setPage(1);
+    fetchAndRender({ showSuggestions: false });
+  });
+
+  cancelBtn?.addEventListener('click', (e) => {
+    // Keep view/per-page; clear only the search query.
+    e.preventDefault();
+    if ((qInput.value || '').trim() === '') return;
+    qInput.value = '';
+    hideSuggest();
     setPage(1);
     fetchAndRender({ showSuggestions: false });
   });

@@ -16,9 +16,11 @@ if ($artistImage !== '' && !$artistImageIsExternal) {
   $artistImage = e(APP_BASE) . '/' . ltrim($artistImage, '/');
 }
 
-$clearParams = ['r' => '/artist', 'id' => (int)$artist['id']];
-if ((int)$pager->perPage !== 20) $clearParams['per_page'] = (int)$pager->perPage;
-if ($view !== 'tile') $clearParams['view'] = $view;
+$cancelParams = ['r' => '/artist', 'id' => (int)$artist['id']];
+if (!empty($filters['sort']) && (string)$filters['sort'] !== 'latest') $cancelParams['sort'] = (string)$filters['sort'];
+if (!empty($filters['language'])) $cancelParams['language'] = (string)$filters['language'];
+if ((int)$pager->perPage !== 20) $cancelParams['per_page'] = (int)$pager->perPage;
+if ($view !== 'tile') $cancelParams['view'] = $view;
 ?>
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -48,7 +50,7 @@ if ($view !== 'tile') $clearParams['view'] = $view;
 
       <div class="col-12 col-lg-5 position-relative">
         <label class="form-label">Search</label>
-        <input class="form-control" name="q" id="songsQ" placeholder="Search title" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
+        <input class="form-control" name="q" id="songsQ" placeholder="Search title/artist" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
         <div class="list-group position-absolute w-100 shadow-sm d-none" id="songsSuggest" style="z-index: 5;"></div>
       </div>
       <div class="col-12 col-lg-2">
@@ -78,8 +80,8 @@ if ($view !== 'tile') $clearParams['view'] = $view;
             <i class="bi bi-list-ul" aria-hidden="true"></i>
           </button>
         </div>
-        <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?<?= http_build_query($clearParams) ?>" title="Clear">
-          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        <a class="btn btn-outline-secondary" id="songsCancel" href="<?= e(APP_BASE) ?>/?<?= http_build_query($cancelParams) ?>" title="Cancel">
+          <i class="bi bi-x-lg" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Cancel</span>
         </a>
       </div>
     </form>
