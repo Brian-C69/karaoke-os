@@ -91,7 +91,7 @@ function href_with(array $params): string {
   <div class="col-12 col-lg-6">
     <div class="card shadow-sm h-100">
       <div class="card-header bg-white d-flex align-items-center justify-content-between">
-        <div class="fw-semibold"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Artists</div>
+        <div class="fw-semibold"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Top artists</div>
         <a class="small text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/artists">View all</a>
       </div>
       <div class="list-group list-group-flush">
@@ -116,10 +116,10 @@ function href_with(array $params): string {
                 </div>
                 <div class="text-truncate">
                   <div class="fw-semibold text-truncate"><?= e((string)$a['name']) ?></div>
-                  <div class="text-muted small text-truncate"><?= (int)($a['song_count'] ?? 0) ?> songs</div>
+                  <div class="text-muted small text-truncate"><?= (int)($a['song_count'] ?? 0) ?> songs · <?= (int)($a['play_count'] ?? 0) ?> plays</div>
                 </div>
               </div>
-              <div class="text-muted small text-nowrap"><?= (int)($a['play_count'] ?? 0) ?> plays</div>
+              <i class="bi bi-chevron-right text-muted" aria-hidden="true"></i>
             </a>
           <?php endforeach; ?>
         <?php endif; ?>
