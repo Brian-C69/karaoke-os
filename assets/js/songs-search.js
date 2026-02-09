@@ -157,7 +157,7 @@
             <div class="cover">${coverHtml}</div>
             <div class="card-body">
               <div class="d-flex align-items-center justify-content-between gap-2">
-                <div class="fw-semibold text-dark text-truncate">${escapeHtml(s.title || '')}</div>
+                <div class="fw-semibold text-truncate">${escapeHtml(s.title || '')}</div>
                 ${favBtn}
               </div>
               <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>

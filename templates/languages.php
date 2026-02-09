@@ -25,7 +25,7 @@
             <?php endif; ?>
           </div>
           <div class="card-body">
-            <div class="fw-semibold text-dark text-truncate"><?= e($lang) ?></div>
+            <div class="fw-semibold text-truncate"><?= e($lang) ?></div>
             <div class="text-muted small"><?= (int)($l['song_count'] ?? 0) ?> songs · <?= (int)($l['play_count'] ?? 0) ?> plays</div>
           </div>
         </a>

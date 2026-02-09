@@ -12,7 +12,7 @@ function href_with(array $params): string {
 
 <div class="row g-3">
   <div class="col-12">
-    <div class="p-4 bg-white rounded shadow-sm">
+    <div class="p-4 bg-body rounded shadow-sm">
       <h1 class="h4 mb-2"><i class="bi bi-compass me-2" aria-hidden="true"></i>Browse & Rankings</h1>
       <div class="text-muted">Public can browse. Logged-in users can play, and every play is tracked.</div>
       <div class="mt-3 d-flex gap-2 flex-wrap">
@@ -26,7 +26,7 @@ function href_with(array $params): string {
 
   <div class="col-12 col-lg-6">
     <div class="card shadow-sm h-100">
-      <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <div class="card-header bg-body d-flex align-items-center justify-content-between">
         <div class="fw-semibold"><i class="bi bi-clock-history me-2" aria-hidden="true"></i>Latest songs</div>
         <a class="small text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/songs">View all</a>
       </div>
@@ -57,7 +57,7 @@ function href_with(array $params): string {
 
   <div class="col-12 col-lg-6">
     <div class="card shadow-sm h-100">
-      <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <div class="card-header bg-body d-flex align-items-center justify-content-between">
         <div class="fw-semibold"><i class="bi bi-trophy me-2" aria-hidden="true"></i>Top 100 (preview)</div>
         <a class="small text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/top">View top 100</a>
       </div>
@@ -91,7 +91,7 @@ function href_with(array $params): string {
 
   <div class="col-12 col-lg-6">
     <div class="card shadow-sm h-100">
-      <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <div class="card-header bg-body d-flex align-items-center justify-content-between">
         <div class="fw-semibold"><i class="bi bi-heart-fill me-2 text-danger" aria-hidden="true"></i>Most liked</div>
         <a class="small text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/liked">View all</a>
       </div>
@@ -125,7 +125,7 @@ function href_with(array $params): string {
 
   <div class="col-12 col-lg-6">
     <div class="card shadow-sm h-100">
-      <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <div class="card-header bg-body d-flex align-items-center justify-content-between">
         <div class="fw-semibold"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Top artists</div>
         <a class="small text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/artists">View all</a>
       </div>
@@ -164,7 +164,7 @@ function href_with(array $params): string {
 
   <div class="col-12 col-lg-6">
     <div class="card shadow-sm h-100">
-      <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <div class="card-header bg-body d-flex align-items-center justify-content-between">
         <div class="fw-semibold"><i class="bi bi-translate me-2" aria-hidden="true"></i>Languages</div>
         <a class="small text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/languages">View all</a>
       </div>

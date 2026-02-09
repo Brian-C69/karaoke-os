@@ -99,7 +99,7 @@
           <a class="card h-100 shadow-sm text-decoration-none" href="?r=/artist&id=${encodeURIComponent(a.id)}">
             <div class="ratio ratio-1x1 bg-dark overflow-hidden">${imgHtml}</div>
             <div class="card-body">
-              <div class="fw-semibold text-dark text-truncate">${escapeHtml(a.name || '')}</div>
+              <div class="fw-semibold text-truncate">${escapeHtml(a.name || '')}</div>
               <div class="text-muted small">${Number(a.song_count || 0)} songs · ${Number(a.play_count || 0)} plays</div>
             </div>
           </a>
@@ -262,4 +262,3 @@
 
   setViewUi(getView());
 })();
-

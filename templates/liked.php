@@ -71,7 +71,7 @@ $baseParams = ['r' => '/liked'];
               </div>
             </div>
             <div class="card-body">
-              <div class="fw-semibold text-dark text-truncate">
+              <div class="fw-semibold text-truncate">
                 <span class="text-muted me-2">#<?= $i ?></span><?= e((string)$r['title']) ?>
               </div>
               <div class="text-muted small text-truncate"><?= e((string)$r['artist']) ?></div>
@@ -85,4 +85,3 @@ $baseParams = ['r' => '/liked'];
     </div>
   <?php endif; ?>
 <?php endif; ?>
-

@@ -7,7 +7,7 @@
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/songs">
       <div class="card-body">
-        <div class="fw-semibold text-dark"><i class="bi bi-music-note-beamed me-2" aria-hidden="true"></i>Songs</div>
+        <div class="fw-semibold"><i class="bi bi-music-note-beamed me-2" aria-hidden="true"></i>Songs</div>
         <div class="text-muted small">Add/edit songs and Drive links.</div>
       </div>
     </a>
@@ -15,7 +15,7 @@
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/users">
       <div class="card-body">
-        <div class="fw-semibold text-dark"><i class="bi bi-people me-2" aria-hidden="true"></i>Users</div>
+        <div class="fw-semibold"><i class="bi bi-people me-2" aria-hidden="true"></i>Users</div>
         <div class="text-muted small">Create user/admin accounts.</div>
       </div>
     </a>
@@ -23,7 +23,7 @@
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/analytics">
       <div class="card-body">
-        <div class="fw-semibold text-dark"><i class="bi bi-graph-up me-2" aria-hidden="true"></i>Analytics</div>
+        <div class="fw-semibold"><i class="bi bi-graph-up me-2" aria-hidden="true"></i>Analytics</div>
         <div class="text-muted small">Top songs and artists by plays.</div>
       </div>
     </a>
@@ -31,7 +31,7 @@
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/email">
       <div class="card-body">
-        <div class="fw-semibold text-dark"><i class="bi bi-envelope-at me-2" aria-hidden="true"></i>Email</div>
+        <div class="fw-semibold"><i class="bi bi-envelope-at me-2" aria-hidden="true"></i>Email</div>
         <div class="text-muted small">Configure verification emails.</div>
       </div>
     </a>
@@ -39,7 +39,7 @@
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/artists">
       <div class="card-body">
-        <div class="fw-semibold text-dark"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Artists</div>
+        <div class="fw-semibold"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Artists</div>
         <div class="text-muted small">Manage artist images.</div>
       </div>
     </a>

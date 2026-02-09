@@ -151,7 +151,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
               </div>
               <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between gap-2">
-                  <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
+                  <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
                   <?php if (!empty($user)): ?>
                     <button type="button"
                             class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $isFav ? 'text-danger' : 'text-muted' ?>"

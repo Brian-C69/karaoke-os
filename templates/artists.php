@@ -141,7 +141,7 @@ if ($pageParams['q'] === '') unset($pageParams['q']);
                 <?php endif; ?>
               </div>
               <div class="card-body">
-                <div class="fw-semibold text-dark text-truncate"><?= e((string)$a['name']) ?></div>
+                <div class="fw-semibold text-truncate"><?= e((string)$a['name']) ?></div>
                 <div class="text-muted small"><?= (int)($a['song_count'] ?? 0) ?> songs · <?= (int)($a['play_count'] ?? 0) ?> plays</div>
               </div>
             </a>
