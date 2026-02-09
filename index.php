@@ -296,7 +296,12 @@ switch ($route) {
 
     case '/top':
         $pageTitle = 'Top 100';
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
+        }
         render('top', [
+            'view' => $view,
             'rows' => top_songs($db, 100),
         ]);
         break;
