@@ -127,7 +127,7 @@
       const lang = String(s.language || '').trim();
       const langFlag = String(s.language_flag || '').trim();
       const flagHtml = langFlag
-        ? `<img class="lang-flag lang-flag-xs lang-flag-circle" src="${escapeAttr(langFlag)}" alt="${escapeAttr(
+        ? `<img class="lang-flag lang-flag-md lang-flag-circle" src="${escapeAttr(langFlag)}" alt="${escapeAttr(
             lang
           )}" title="${escapeAttr(lang)}">`
         : '';

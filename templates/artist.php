@@ -137,7 +137,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
                   <div><?= (int)$s['play_count'] ?> plays</div>
                   <div>
                     <?php if ($flag): ?>
-                      <img class="lang-flag lang-flag-xs lang-flag-circle" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
+                      <img class="lang-flag lang-flag-md lang-flag-circle" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
                     <?php endif; ?>
                   </div>
                 </div>
