@@ -21,17 +21,17 @@ $backHref = e(APP_BASE) . '/?' . http_build_query($backParams);
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label">Title *</label>
-          <div class="position-relative">
-            <input class="form-control" name="title" required value="<?= e((string)($song['title'] ?? '')) ?>" autocomplete="off" placeholder="Start typing…">
-            <div class="list-group position-absolute w-100 shadow-sm d-none" id="titleSuggest" style="z-index: 5;"></div>
-          </div>
-        </div>
-        <div class="col-md-6">
           <label class="form-label">Artist *</label>
           <div class="position-relative">
             <input class="form-control" name="artist" required value="<?= e((string)($song['artist'] ?? '')) ?>" autocomplete="off" placeholder="Type once, then pick from suggestions">
             <div class="list-group position-absolute w-100 shadow-sm d-none" id="artistSuggest" style="z-index: 5;"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Title *</label>
+          <div class="position-relative">
+            <input class="form-control" name="title" required value="<?= e((string)($song['title'] ?? '')) ?>" autocomplete="off" placeholder="Start typing…">
+            <div class="list-group position-absolute w-100 shadow-sm d-none" id="titleSuggest" style="z-index: 5;"></div>
           </div>
         </div>
         <div class="col-12">
@@ -61,16 +61,16 @@ $backHref = e(APP_BASE) . '/?' . http_build_query($backParams);
             <div class="col-md-9">
               <div class="row g-3">
                 <div class="col-md-4">
-                  <label class="form-label">Language (auto)</label>
+                  <label class="form-label">Language</label>
                   <input class="form-control" name="language" value="<?= e((string)($song['language'] ?? '')) ?>" placeholder="EN / ZH / JA / KO">
                 </div>
                 <div class="col-md-8">
-                  <label class="form-label">Album (auto)</label>
+                  <label class="form-label">Album</label>
                   <input class="form-control" name="album" value="<?= e((string)($song['album'] ?? '')) ?>" placeholder="Auto-filled when possible">
                 </div>
                 <?php if ($song): ?>
                   <div class="col-12">
-                    <label class="form-label">Cover URL (auto)</label>
+                    <label class="form-label">Cover URL</label>
                     <input class="form-control" name="cover_url" value="<?= e((string)($song['cover_url'] ?? '')) ?>" placeholder="Auto-filled when possible">
                   </div>
                 <?php else: ?>
