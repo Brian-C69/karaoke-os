@@ -68,6 +68,13 @@ function href_with(array $params): string {
             <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
               <div class="d-flex align-items-center gap-3 text-truncate">
                 <div class="badge text-bg-dark"><?= (int)($i + 1) ?></div>
+                <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
+                  <?php if (!empty($s['cover_url'])): ?>
+                    <img src="<?= e((string)$s['cover_url']) ?>" alt="" style="width:44px;height:44px;object-fit:cover;">
+                  <?php else: ?>
+                    <i class="bi bi-image" aria-hidden="true"></i>
+                  <?php endif; ?>
+                </div>
                 <div class="text-truncate">
                   <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
                   <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
@@ -92,11 +99,25 @@ function href_with(array $params): string {
           <div class="p-3 text-muted small">No artists yet.</div>
         <?php else: ?>
           <?php foreach ($topArtists as $a): ?>
+            <?php
+              $aImg = trim((string)($a['image_url'] ?? ''));
+              $aImgIsExternal = $aImg !== '' && is_safe_external_url($aImg);
+              if ($aImg !== '' && !$aImgIsExternal) $aImg = e(APP_BASE) . '/' . ltrim($aImg, '/');
+            ?>
             <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3"
                href="<?= href_with(['r' => '/artist', 'id' => (int)($a['id'] ?? 0)]) ?>">
-              <div class="text-truncate">
-                <div class="fw-semibold text-truncate"><?= e((string)$a['name']) ?></div>
-                <div class="text-muted small"><?= (int)($a['song_count'] ?? 0) ?> songs</div>
+              <div class="d-flex align-items-center gap-3 text-truncate">
+                <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
+                  <?php if ($aImg !== ''): ?>
+                    <img src="<?= $aImg ?>" alt="" style="width:44px;height:44px;object-fit:cover;">
+                  <?php else: ?>
+                    <i class="bi bi-person-circle" aria-hidden="true"></i>
+                  <?php endif; ?>
+                </div>
+                <div class="text-truncate">
+                  <div class="fw-semibold text-truncate"><?= e((string)$a['name']) ?></div>
+                  <div class="text-muted small text-truncate"><?= (int)($a['song_count'] ?? 0) ?> songs</div>
+                </div>
               </div>
               <div class="text-muted small text-nowrap"><?= (int)($a['play_count'] ?? 0) ?> plays</div>
             </a>
