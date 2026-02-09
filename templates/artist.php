@@ -15,148 +15,143 @@ $artistImageIsExternal = $artistImage !== '' && is_safe_external_url($artistImag
 if ($artistImage !== '' && !$artistImageIsExternal) {
   $artistImage = e(APP_BASE) . '/' . ltrim($artistImage, '/');
 }
+
+$clearParams = ['r' => '/artist', 'id' => (int)$artist['id']];
+if ((int)$pager->perPage !== 20) $clearParams['per_page'] = (int)$pager->perPage;
+if ($view !== 'tile') $clearParams['view'] = $view;
 ?>
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-  <div>
-    <h1 class="h4 m-0"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i><?= e((string)$artist['name']) ?></h1>
-    <div class="text-muted small"><?= (int)($artist['song_count'] ?? 0) ?> songs · <?= (int)($artist['play_count'] ?? 0) ?> plays</div>
+  <div class="d-flex align-items-center gap-3">
+    <div class="rounded-circle bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:56px;height:56px;">
+      <?php if ($artistImage !== ''): ?>
+        <img src="<?= $artistImage ?>" alt="" style="object-fit:cover; width:56px; height:56px;">
+      <?php else: ?>
+        <i class="bi bi-person-circle fs-2" aria-hidden="true"></i>
+      <?php endif; ?>
+    </div>
+    <div>
+      <h1 class="h4 m-0"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i><?= e((string)$artist['name']) ?></h1>
+      <div class="text-muted small"><?= (int)($artist['song_count'] ?? 0) ?> songs · <?= (int)($artist['play_count'] ?? 0) ?> plays</div>
+    </div>
   </div>
   <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/artists"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
 </div>
 
-<div class="row g-3">
-  <div class="col-12 col-lg-4">
-    <div class="card shadow-sm">
-      <div class="ratio ratio-1x1 bg-dark overflow-hidden">
-        <?php if ($artistImage !== ''): ?>
-          <img src="<?= $artistImage ?>" alt="" style="object-fit:cover; width:100%; height:100%;">
-        <?php else: ?>
-          <div class="w-100 h-100 d-flex align-items-center justify-content-center text-white-50">
-            <i class="bi bi-person-circle fs-1" aria-hidden="true"></i>
-          </div>
-        <?php endif; ?>
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/artist">
+      <input type="hidden" name="r" value="/artist">
+      <input type="hidden" name="id" value="<?= (int)$artist['id'] ?>">
+      <input type="hidden" name="artist" id="songsArtistFixed" value="<?= e((string)$artist['name']) ?>">
+      <input type="hidden" name="view" id="songsView" value="<?= e($view) ?>">
+
+      <div class="col-12 col-lg-5 position-relative">
+        <label class="form-label">Search</label>
+        <input class="form-control" name="q" id="songsQ" placeholder="Search title" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
+        <div class="list-group position-absolute w-100 shadow-sm d-none" id="songsSuggest" style="z-index: 5;"></div>
       </div>
-    </div>
-  </div>
-  <div class="col-12 col-lg-8">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/artist">
-          <input type="hidden" name="r" value="/artist">
-          <input type="hidden" name="id" value="<?= (int)$artist['id'] ?>">
-          <input type="hidden" name="artist" id="songsArtistFixed" value="<?= e((string)$artist['name']) ?>">
-          <input type="hidden" name="view" id="songsView" value="<?= e($view) ?>">
-
-          <div class="col-12 col-lg-5 position-relative">
-            <label class="form-label">Search</label>
-            <input class="form-control" name="q" id="songsQ" placeholder="Search title" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
-            <div class="list-group position-absolute w-100 shadow-sm d-none" id="songsSuggest" style="z-index: 5;"></div>
-          </div>
-          <div class="col-12 col-lg-2">
-            <label class="form-label">Sort</label>
-            <select class="form-select" name="sort" id="songsSort">
-              <option value="latest" <?= ($filters['sort'] ?? '') === 'latest' ? 'selected' : '' ?>>Latest</option>
-              <option value="plays" <?= ($filters['sort'] ?? '') === 'plays' ? 'selected' : '' ?>>Most played</option>
-              <option value="title" <?= ($filters['sort'] ?? '') === 'title' ? 'selected' : '' ?>>Title A–Z</option>
-            </select>
-          </div>
-          <div class="col-12 col-lg-2">
-            <label class="form-label">Per page</label>
-            <select class="form-select" name="per_page" id="songsPerPage">
-              <?php foreach ([20, 40, 60, 80, 100] as $n): ?>
-                <option value="<?= (int)$n ?>" <?= ((int)$pager->perPage === (int)$n) ? 'selected' : '' ?>><?= (int)$n ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <input type="hidden" name="page" id="songsPage" value="<?= (int)$pager->page ?>">
-          <div class="col-12 col-lg-3 d-flex gap-2">
-            <button class="btn btn-outline-primary flex-grow-1" id="songsGo"><i class="bi bi-search me-1" aria-hidden="true"></i>Go</button>
-            <div class="btn-group" role="group" aria-label="View mode">
-              <button type="button" class="btn btn-outline-secondary" data-songs-view="tile" title="Tile view" aria-label="Tile view" aria-pressed="<?= $view === 'tile' ? 'true' : 'false' ?>">
-                <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
-              </button>
-              <button type="button" class="btn btn-outline-secondary" data-songs-view="list" title="List view" aria-label="List view" aria-pressed="<?= $view === 'list' ? 'true' : 'false' ?>">
-                <i class="bi bi-list-ul" aria-hidden="true"></i>
-              </button>
-            </div>
-            <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/artist&id=<?= (int)$artist['id'] ?>&view=<?= e($view) ?>&per_page=<?= (int)$pager->perPage ?>" title="Clear">
-              <i class="bi bi-x-lg" aria-hidden="true"></i>
-            </a>
-          </div>
-        </form>
+      <div class="col-12 col-lg-2">
+        <label class="form-label">Sort</label>
+        <select class="form-select" name="sort" id="songsSort">
+          <option value="latest" <?= ($filters['sort'] ?? '') === 'latest' ? 'selected' : '' ?>>Latest</option>
+          <option value="plays" <?= ($filters['sort'] ?? '') === 'plays' ? 'selected' : '' ?>>Most played</option>
+          <option value="title" <?= ($filters['sort'] ?? '') === 'title' ? 'selected' : '' ?>>Title A–Z</option>
+        </select>
       </div>
-    </div>
-
-    <div class="mt-3" id="songsResults">
-      <?php if (!$songs): ?>
-        <div class="alert alert-info">No songs found.</div>
-      <?php else: ?>
-        <?php if ($view === 'list'): ?>
-          <div class="list-group shadow-sm" id="songsList">
-            <?php foreach ($songs as $s): ?>
-              <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
-                <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
-                  <?php if (!empty($s['cover_url'])): ?>
-                    <img src="<?= e((string)$s['cover_url']) ?>" alt="" style="width:44px;height:44px;object-fit:cover;">
-                  <?php else: ?>
-                    <i class="bi bi-image" aria-hidden="true"></i>
-                  <?php endif; ?>
-                </div>
-                <div class="flex-grow-1 text-truncate">
-                  <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
-                  <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
-                </div>
-                <div class="text-muted small text-nowrap"><?= (int)$s['play_count'] ?> plays</div>
-              </a>
-            <?php endforeach; ?>
-          </div>
-        <?php else: ?>
-          <div class="row g-3" id="songsGrid">
-            <?php foreach ($songs as $s): ?>
-              <div class="col-6 col-md-4 col-lg-3">
-                <a class="card song-card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
-                  <div class="cover">
-                    <?php if (!empty($s['cover_url'])): ?>
-                      <img src="<?= e((string)$s['cover_url']) ?>" alt="">
-                    <?php else: ?>
-                      <div class="placeholder"><i class="bi bi-image me-1" aria-hidden="true"></i>No cover</div>
-                    <?php endif; ?>
-                  </div>
-                  <div class="card-body">
-                    <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
-                    <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
-                    <div class="text-muted small"><?= (int)$s['play_count'] ?> plays</div>
-                  </div>
-                </a>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
-      <?php endif; ?>
-    </div>
-
-    <div id="songsPager" class="d-flex justify-content-center mt-4">
-      <?php if ($pager->pages > 1): ?>
-        <nav aria-label="Songs pages">
-          <ul class="pagination mb-0">
-            <li class="page-item <?= $pager->hasPrev() ? '' : 'disabled' ?>">
-              <a class="page-link" href="#" data-page="<?= (int)$pager->prevPage() ?>">Prev</a>
-            </li>
-            <?php foreach ($pager->window(2) as $p): ?>
-              <li class="page-item <?= $p === $pager->page ? 'active' : '' ?>">
-                <a class="page-link" href="#" data-page="<?= (int)$p ?>"><?= (int)$p ?></a>
-              </li>
-            <?php endforeach; ?>
-            <li class="page-item <?= $pager->hasNext() ? '' : 'disabled' ?>">
-              <a class="page-link" href="#" data-page="<?= (int)$pager->nextPage() ?>">Next</a>
-            </li>
-          </ul>
-        </nav>
-      <?php endif; ?>
-    </div>
+      <div class="col-12 col-lg-2">
+        <label class="form-label">Per page</label>
+        <select class="form-select" name="per_page" id="songsPerPage">
+          <?php foreach ([20, 40, 60, 80, 100] as $n): ?>
+            <option value="<?= (int)$n ?>" <?= ((int)$pager->perPage === (int)$n) ? 'selected' : '' ?>><?= (int)$n ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <input type="hidden" name="page" id="songsPage" value="<?= (int)$pager->page ?>">
+      <div class="col-12 col-lg-3 d-flex gap-2">
+        <button class="btn btn-outline-primary flex-grow-1" id="songsGo"><i class="bi bi-search me-1" aria-hidden="true"></i>Go</button>
+        <div class="btn-group" role="group" aria-label="View mode">
+          <button type="button" class="btn btn-outline-secondary" data-songs-view="tile" title="Tile view" aria-label="Tile view" aria-pressed="<?= $view === 'tile' ? 'true' : 'false' ?>">
+            <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn-outline-secondary" data-songs-view="list" title="List view" aria-label="List view" aria-pressed="<?= $view === 'list' ? 'true' : 'false' ?>">
+            <i class="bi bi-list-ul" aria-hidden="true"></i>
+          </button>
+        </div>
+        <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?<?= http_build_query($clearParams) ?>" title="Clear">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </a>
+      </div>
+    </form>
   </div>
 </div>
 
-<script src="<?= e(APP_BASE) ?>/assets/js/songs-search.js"></script>
+<div id="songsResults">
+  <?php if (!$songs): ?>
+    <div class="alert alert-info">No songs found.</div>
+  <?php else: ?>
+    <?php if ($view === 'list'): ?>
+      <div class="list-group shadow-sm" id="songsList">
+        <?php foreach ($songs as $s): ?>
+          <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
+            <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
+              <?php if (!empty($s['cover_url'])): ?>
+                <img src="<?= e((string)$s['cover_url']) ?>" alt="" style="width:44px;height:44px;object-fit:cover;">
+              <?php else: ?>
+                <i class="bi bi-image" aria-hidden="true"></i>
+              <?php endif; ?>
+            </div>
+            <div class="flex-grow-1 text-truncate">
+              <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
+              <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
+            </div>
+            <div class="text-muted small text-nowrap"><?= (int)$s['play_count'] ?> plays</div>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+      <div class="row g-3" id="songsGrid">
+        <?php foreach ($songs as $s): ?>
+          <div class="col-6 col-md-4 col-lg-3">
+            <a class="card song-card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
+              <div class="cover">
+                <?php if (!empty($s['cover_url'])): ?>
+                  <img src="<?= e((string)$s['cover_url']) ?>" alt="">
+                <?php else: ?>
+                  <div class="placeholder"><i class="bi bi-image me-1" aria-hidden="true"></i>No cover</div>
+                <?php endif; ?>
+              </div>
+              <div class="card-body">
+                <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
+                <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
+                <div class="text-muted small"><?= (int)$s['play_count'] ?> plays</div>
+              </div>
+            </a>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+  <?php endif; ?>
+</div>
 
+<div id="songsPager" class="d-flex justify-content-center mt-4">
+  <?php if ($pager->pages > 1): ?>
+    <nav aria-label="Songs pages">
+      <ul class="pagination mb-0">
+        <li class="page-item <?= $pager->hasPrev() ? '' : 'disabled' ?>">
+          <a class="page-link" href="#" data-page="<?= (int)$pager->prevPage() ?>">Prev</a>
+        </li>
+        <?php foreach ($pager->window(2) as $p): ?>
+          <li class="page-item <?= $p === $pager->page ? 'active' : '' ?>">
+            <a class="page-link" href="#" data-page="<?= (int)$p ?>"><?= (int)$p ?></a>
+          </li>
+        <?php endforeach; ?>
+        <li class="page-item <?= $pager->hasNext() ? '' : 'disabled' ?>">
+          <a class="page-link" href="#" data-page="<?= (int)$pager->nextPage() ?>">Next</a>
+        </li>
+      </ul>
+    </nav>
+  <?php endif; ?>
+</div>
+
+<script src="<?= e(APP_BASE) ?>/assets/js/songs-search.js"></script>

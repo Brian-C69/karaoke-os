@@ -7,19 +7,28 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
   $sort = 'plays';
 }
 ?>
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+<div class="mb-3">
   <h1 class="h4 m-0"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Artists</h1>
-  <div class="d-flex align-items-center gap-2">
-    <form method="get" action="<?= e(APP_BASE) ?>/" class="d-flex align-items-center gap-2">
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <form method="get" action="<?= e(APP_BASE) ?>/" class="row g-2 align-items-end">
       <input type="hidden" name="r" value="/artists">
-      <select class="form-select form-select-sm" name="sort" onchange="this.form.submit()">
-        <option value="plays" <?= $sort === 'plays' ? 'selected' : '' ?>>Most plays</option>
-        <option value="songs" <?= $sort === 'songs' ? 'selected' : '' ?>>Most songs</option>
-        <option value="latest" <?= $sort === 'latest' ? 'selected' : '' ?>>Recently updated</option>
-        <option value="name" <?= $sort === 'name' ? 'selected' : '' ?>>A–Z</option>
-      </select>
+      <div class="col-12 col-lg-4">
+        <label class="form-label">Sort</label>
+        <select class="form-select" name="sort">
+          <option value="plays" <?= $sort === 'plays' ? 'selected' : '' ?>>Most plays</option>
+          <option value="songs" <?= $sort === 'songs' ? 'selected' : '' ?>>Most songs</option>
+          <option value="latest" <?= $sort === 'latest' ? 'selected' : '' ?>>Recently updated</option>
+          <option value="name" <?= $sort === 'name' ? 'selected' : '' ?>>A–Z</option>
+        </select>
+      </div>
+      <div class="col-12 col-lg-4 d-flex gap-2">
+        <button class="btn btn-outline-primary flex-grow-1"><i class="bi bi-search me-1" aria-hidden="true"></i>Go</button>
+        <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/songs"><i class="bi bi-music-note-list me-1" aria-hidden="true"></i>Songs</a>
+      </div>
     </form>
-    <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/songs">Browse songs</a>
   </div>
 </div>
 
