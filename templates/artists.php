@@ -42,8 +42,8 @@ function artists_href(array $params): string {
       <input type="hidden" name="view" id="artistsView" value="<?= e($view) ?>">
 
       <div class="col-12 col-lg-5">
-        <label class="form-label">Search</label>
-        <input class="form-control" name="q" id="artistsQ" placeholder="Search title/artist" value="<?= e($q) ?>" autocomplete="off">
+        <label class="form-label">Search Artist</label>
+        <input class="form-control" name="q" id="artistsQ" placeholder="Search artist" value="<?= e($q) ?>" autocomplete="off">
       </div>
       <div class="col-12 col-lg-2">
         <label class="form-label">Sort</label>
