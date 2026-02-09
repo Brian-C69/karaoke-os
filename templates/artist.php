@@ -50,7 +50,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
 
       <div class="col-12 col-lg-5 position-relative">
         <label class="form-label">Search</label>
-        <input class="form-control" name="q" id="songsQ" placeholder="Search title/artist" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
+        <input class="form-control" name="q" id="songsQ" placeholder="Search title" value="<?= e((string)($filters['q'] ?? '')) ?>" autocomplete="off">
         <div class="list-group position-absolute w-100 shadow-sm d-none" id="songsSuggest" style="z-index: 5;"></div>
       </div>
       <div class="col-12 col-lg-2">
