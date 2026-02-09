@@ -17,7 +17,7 @@
         <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/songs&language=<?= urlencode($lang) ?>">
           <div class="ratio ratio-1x1 bg-dark overflow-hidden d-flex align-items-center justify-content-center">
             <?php if ($flag): ?>
-              <img class="lang-flag lang-flag-lg" src="<?= e($flag) ?>" alt="<?= e($lang) ?>" title="<?= e($lang) ?>">
+              <img class="lang-flag-card" src="<?= e($flag) ?>" alt="<?= e($lang) ?>" title="<?= e($lang) ?>">
             <?php else: ?>
               <div class="w-100 h-100 d-flex align-items-center justify-content-center text-white-50">
                 <i class="bi bi-question-circle fs-1" aria-hidden="true"></i>
