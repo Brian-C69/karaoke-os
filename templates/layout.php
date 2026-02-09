@@ -37,7 +37,7 @@
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/artists"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Artists</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/languages"><i class="bi bi-translate me-1" aria-hidden="true"></i>Languages</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/top"><i class="bi bi-trophy me-1" aria-hidden="true"></i>Top 100</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/liked"><i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i>Most liked</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/liked"><i class="bi bi-heart me-1" aria-hidden="true"></i>Most liked</a></li>
         </ul>
         <ul class="navbar-nav">
           <?php if ($user): ?>
