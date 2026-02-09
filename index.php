@@ -466,6 +466,15 @@ switch ($route) {
 
     case '/admin/artists':
         require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_verify();
+            $action = (string)($_POST['action'] ?? '');
+            if ($action === 'cache_external_images') {
+                $res = cache_external_artist_images($db, 25);
+                flash('success', sprintf('Cached %d/%d artist images.', (int)($res['cached'] ?? 0), (int)($res['attempted'] ?? 0)));
+            }
+            redirect('/?r=/admin/artists');
+        }
         $pageTitle = 'Admin · Artists';
         $sort = strtolower(trim((string)($_GET['sort'] ?? 'latest')));
         if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {

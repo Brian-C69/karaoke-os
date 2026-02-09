@@ -165,16 +165,29 @@ function upsert_artist(PDO $db, string $name): ?array
                     $img = !empty($meta['image_url']) ? (string)$meta['image_url'] : null;
                     $mb = !empty($meta['musicbrainz_id']) ? (string)$meta['musicbrainz_id'] : null;
                     if ($img !== null || $mb !== null) {
-                        $stmt = $db->prepare('UPDATE artists SET image_url = COALESCE(image_url, :img), musicbrainz_id = COALESCE(musicbrainz_id, :mb), updated_at = :u WHERE id = :id');
-                    $stmt->execute([
-                        ':img' => $img,
-                        ':mb' => $mb,
-                        ':u' => now_db(),
-                        ':id' => (int)$row['id'],
-                    ]);
-                    $stmt = $db->prepare('SELECT * FROM artists WHERE id = :id LIMIT 1');
-                    $stmt->execute([':id' => (int)$row['id']]);
-                    $row = $stmt->fetch();
+                        if ($img !== null && is_safe_external_url($img)) {
+                            $cached = cache_artist_image_url((int)$row['id'], $name, $img);
+                            if ($cached) {
+                                $img = $cached;
+                            }
+                        }
+                        $stmt = $db->prepare(
+                            'UPDATE artists
+                             SET
+                                image_url = CASE WHEN image_url IS NULL OR TRIM(image_url) = \'\' THEN :img ELSE image_url END,
+                                musicbrainz_id = CASE WHEN musicbrainz_id IS NULL OR TRIM(musicbrainz_id) = \'\' THEN :mb ELSE musicbrainz_id END,
+                                updated_at = :u
+                             WHERE id = :id'
+                        );
+                        $stmt->execute([
+                            ':img' => $img,
+                            ':mb' => $mb,
+                            ':u' => now_db(),
+                            ':id' => (int)$row['id'],
+                        ]);
+                        $stmt = $db->prepare('SELECT * FROM artists WHERE id = :id LIMIT 1');
+                        $stmt->execute([':id' => (int)$row['id']]);
+                        $row = $stmt->fetch();
                     }
                 }
             } catch (Throwable $e) {
@@ -209,10 +222,63 @@ function upsert_artist(PDO $db, string $name): ?array
         ':u' => $now,
     ]);
     $id = (int)$db->lastInsertId();
+
+    if ($imageUrl !== null && $imageUrl !== '' && is_safe_external_url($imageUrl)) {
+        try {
+            $cached = cache_artist_image_url($id, $name, $imageUrl);
+            if ($cached) {
+                $stmt = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                $stmt->execute([':img' => $cached, ':u' => now_db(), ':id' => $id]);
+            }
+        } catch (Throwable $e) {
+            // ignore
+        }
+    }
+
     $stmt = $db->prepare('SELECT * FROM artists WHERE id = :id LIMIT 1');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch();
     return is_array($row) ? $row : null;
+}
+
+function cache_external_artist_images(PDO $db, int $limit = 25): array
+{
+    $limit = max(1, min(200, (int)$limit));
+    $stmt = $db->prepare(
+        'SELECT id, name, image_url
+         FROM artists
+         WHERE image_url IS NOT NULL AND TRIM(image_url) <> \'\' AND (image_url LIKE \'http://%\' OR image_url LIKE \'https://%\')
+         ORDER BY updated_at DESC, id DESC
+         LIMIT :lim'
+    );
+    $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+
+    $ok = 0;
+    $fail = 0;
+    foreach ($rows as $r) {
+        $id = (int)($r['id'] ?? 0);
+        $name = (string)($r['name'] ?? '');
+        $url = (string)($r['image_url'] ?? '');
+        if ($id <= 0 || $url === '' || !is_safe_external_url($url)) {
+            continue;
+        }
+        try {
+            $cached = cache_artist_image_url($id, $name, $url);
+            if ($cached) {
+                $u = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                $u->execute([':img' => $cached, ':u' => now_db(), ':id' => $id]);
+                $ok++;
+            } else {
+                $fail++;
+            }
+        } catch (Throwable $e) {
+            $fail++;
+        }
+    }
+
+    return ['attempted' => count($rows), 'cached' => $ok, 'failed' => $fail];
 }
 
 function get_artist(PDO $db, int $id): ?array

@@ -11,6 +11,11 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
   <h1 class="h4 m-0"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Admin · Artists</h1>
   <div class="d-flex align-items-center gap-2">
+    <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/artists" class="d-inline">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="action" value="cache_external_images">
+      <button class="btn btn-outline-primary btn-sm" type="submit"><i class="bi bi-download me-1" aria-hidden="true"></i>Cache images</button>
+    </form>
     <form method="get" action="<?= e(APP_BASE) ?>/" class="d-flex align-items-center gap-2">
       <input type="hidden" name="r" value="/admin/artists">
       <select class="form-select form-select-sm" name="sort" onchange="this.form.submit()">
