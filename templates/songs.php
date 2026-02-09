@@ -11,12 +11,6 @@ if (!in_array($view, ['tile', 'list'], true)) {
 $clearParams = ['r' => '/songs'];
 if ((int)$pager->perPage !== 20) $clearParams['per_page'] = (int)$pager->perPage;
 if ($view !== 'tile') $clearParams['view'] = $view;
-$cancelParams = $clearParams;
-$cancelParams['r'] = '/songs';
-$cancelParams['sort'] = (string)($filters['sort'] ?? 'latest');
-if ($cancelParams['sort'] === 'latest') unset($cancelParams['sort']);
-if (!empty($filters['artist'])) $cancelParams['artist'] = (string)$filters['artist'];
-if (!empty($filters['language'])) $cancelParams['language'] = (string)$filters['language'];
 $params = [
   'r' => '/songs',
   'q' => (string)($filters['q'] ?? ''),
@@ -77,9 +71,9 @@ function songs_href(array $params): string {
             <i class="bi bi-list-ul" aria-hidden="true"></i>
           </button>
         </div>
-        <a class="btn btn-outline-secondary" id="songsCancel" href="<?= songs_href($cancelParams) ?>" title="Cancel">
+        <button type="button" class="btn btn-outline-secondary" id="songsCancel" title="Cancel">
           <i class="bi bi-x-lg" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Cancel</span>
-        </a>
+        </button>
       </div>
       <?php if (($filters['artist'] ?? '') !== ''): ?>
         <div class="col-12">
