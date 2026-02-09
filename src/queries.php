@@ -779,6 +779,24 @@ function top_songs(PDO $db, int $limit): array
     return $stmt->fetchAll();
 }
 
+function top_liked_songs(PDO $db, int $limit): array
+{
+    $stmt = $db->prepare(
+        'SELECT
+            s.*,
+            COUNT(f.id) AS like_count
+        FROM songs s
+        LEFT JOIN favorites f ON f.song_id = s.id
+        WHERE s.is_active = 1
+        GROUP BY s.id
+        ORDER BY like_count DESC, s.title ASC
+        LIMIT :lim'
+    );
+    $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
 function top_artists(PDO $db, int $limit): array
 {
     $stmt = $db->prepare(

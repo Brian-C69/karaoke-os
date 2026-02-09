@@ -18,6 +18,7 @@ switch ($route) {
         render('home', [
             'latestSongs' => find_songs($db, ['sort' => 'latest'], 10, 0),
             'topSongs' => top_songs($db, 10),
+            'topLikedSongs' => top_liked_songs($db, 10),
             'topArtists' => find_artists($db, 10, 0, 'plays'),
             'topLanguages' => array_slice(list_languages($db), 0, 10),
         ]);
@@ -318,6 +319,18 @@ switch ($route) {
         render('top', [
             'view' => $view,
             'rows' => top_songs($db, 100),
+        ]);
+        break;
+
+    case '/liked':
+        $pageTitle = 'Most liked';
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
+        }
+        render('liked', [
+            'view' => $view,
+            'rows' => top_liked_songs($db, 100),
         ]);
         break;
 

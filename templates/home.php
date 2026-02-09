@@ -1,6 +1,7 @@
 <?php
 /** @var array $latestSongs */
 /** @var array $topSongs */
+/** @var array $topLikedSongs */
 /** @var array $topArtists */
 /** @var array $topLanguages */
 
@@ -81,6 +82,40 @@ function href_with(array $params): string {
                 </div>
               </div>
               <div class="text-muted small text-nowrap"><?= (int)($s['play_count'] ?? 0) ?> plays</div>
+            </a>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white d-flex align-items-center justify-content-between">
+        <div class="fw-semibold"><i class="bi bi-heart-fill me-2 text-danger" aria-hidden="true"></i>Most liked</div>
+        <a class="small text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/liked">View all</a>
+      </div>
+      <div class="list-group list-group-flush">
+        <?php if (!$topLikedSongs): ?>
+          <div class="p-3 text-muted small">No likes yet.</div>
+        <?php else: ?>
+          <?php foreach ($topLikedSongs as $i => $s): ?>
+            <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
+              <div class="d-flex align-items-center gap-3 text-truncate">
+                <div class="badge text-bg-dark"><?= (int)($i + 1) ?></div>
+                <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
+                  <?php if (!empty($s['cover_url'])): ?>
+                    <img src="<?= e((string)$s['cover_url']) ?>" alt="" style="width:44px;height:44px;object-fit:cover;">
+                  <?php else: ?>
+                    <i class="bi bi-image" aria-hidden="true"></i>
+                  <?php endif; ?>
+                </div>
+                <div class="text-truncate">
+                  <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
+                  <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
+                </div>
+              </div>
+              <div class="text-muted small text-nowrap"><i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i><?= (int)($s['like_count'] ?? 0) ?></div>
             </a>
           <?php endforeach; ?>
         <?php endif; ?>

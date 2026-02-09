@@ -14,6 +14,9 @@
   <link rel="icon" href="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.ico" sizes="any">
   <link rel="icon" type="image/png" href="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png">
   <link rel="apple-touch-icon" href="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="<?= e(APP_BASE) ?>/assets/css/app.css" rel="stylesheet">
@@ -34,6 +37,7 @@
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/artists"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Artists</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/languages"><i class="bi bi-translate me-1" aria-hidden="true"></i>Languages</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/top"><i class="bi bi-trophy me-1" aria-hidden="true"></i>Top 100</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/liked"><i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i>Most liked</a></li>
         </ul>
         <ul class="navbar-nav">
           <?php if ($user): ?>

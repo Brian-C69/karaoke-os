@@ -1,5 +1,5 @@
 :root {
-  --bs-font-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --bs-font-sans-serif: "Roboto", sans-serif;
   --bs-body-font-family: var(--bs-font-sans-serif);
 }
 body { font-family: var(--bs-body-font-family); }
