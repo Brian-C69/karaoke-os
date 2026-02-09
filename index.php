@@ -18,7 +18,7 @@ switch ($route) {
         render('home', [
             'latestSongs' => find_songs($db, ['sort' => 'latest'], 10, 0),
             'topSongs' => top_songs($db, 10),
-            'topArtists' => top_artists($db, 10),
+            'topArtists' => find_artists($db, 10, 0, 'plays'),
             'topLanguages' => array_slice(list_languages($db), 0, 10),
         ]);
         break;
@@ -178,6 +178,7 @@ switch ($route) {
         $pageTitle = $song['title'];
         render('song', [
             'song' => $song,
+            'artistRow' => get_artist_by_name($db, (string)($song['artist'] ?? '')),
             'playCount' => (int)get_song_play_count($db, $songId),
         ]);
         break;
@@ -221,8 +222,57 @@ switch ($route) {
 
     case '/artists':
         $pageTitle = 'Artists';
+        $sort = strtolower(trim((string)($_GET['sort'] ?? 'plays')));
+        if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
+            $sort = 'plays';
+        }
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 20;
+        $total = count_artists($db);
+        $pager = new SimplePager($total, $page, $perPage);
         render('artists', [
-            'artists' => list_artists($db),
+            'sort' => $sort,
+            'pager' => $pager,
+            'artists' => find_artists($db, $pager->limit(), $pager->offset(), $sort),
+        ]);
+        break;
+
+    case '/artist':
+        $artistId = (int)($_GET['id'] ?? 0);
+        $artist = $artistId > 0 ? get_artist($db, $artistId) : null;
+        if (!$artist) {
+            http_response_code(404);
+            $pageTitle = 'Not Found';
+            render('error', ['message' => 'Artist not found.']);
+            break;
+        }
+        $pageTitle = (string)$artist['name'];
+
+        $filters = [
+            'q' => trim((string)($_GET['q'] ?? '')),
+            'artist' => (string)$artist['name'],
+            'language' => trim((string)($_GET['language'] ?? '')),
+            'sort' => trim((string)($_GET['sort'] ?? 'latest')),
+        ];
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
+        }
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        $perPage = min(100, $perPage);
+        $total = count_songs($db, $filters);
+        $pager = new SimplePager($total, $page, $perPage);
+
+        render('artist', [
+            'artist' => $artist,
+            'filters' => $filters,
+            'view' => $view,
+            'pager' => $pager,
+            'songs' => find_songs($db, $filters, $pager->limit(), $pager->offset()),
         ]);
         break;
 
@@ -338,6 +388,7 @@ switch ($route) {
         }
 
         $now = now_db();
+        upsert_artist($db, $artist);
         $stmt = $db->prepare(
             'INSERT INTO songs (title, artist, language, album, cover_url, drive_url, drive_file_id, is_active, created_at, updated_at)
              VALUES (:t, :a, :l, :al, :c, :d, :fid, :ia, :ca, :ua)'
@@ -371,6 +422,91 @@ switch ($route) {
         render('admin_songs', [
             'view' => (string)($_GET['view'] ?? 'active'),
             'songs' => admin_list_songs($db, (string)($_GET['view'] ?? 'active')),
+        ]);
+        break;
+
+    case '/admin/artists':
+        require_admin();
+        $pageTitle = 'Admin · Artists';
+        $sort = strtolower(trim((string)($_GET['sort'] ?? 'latest')));
+        if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
+            $sort = 'latest';
+        }
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 20;
+        $total = count_artists($db);
+        $pager = new SimplePager($total, $page, $perPage);
+        render('admin_artists', [
+            'sort' => $sort,
+            'pager' => $pager,
+            'artists' => find_artists($db, $pager->limit(), $pager->offset(), $sort),
+        ]);
+        break;
+
+    case '/admin/artist-edit':
+        require_admin();
+        $artistId = (int)($_GET['id'] ?? 0);
+        $artist = $artistId > 0 ? get_artist($db, $artistId) : null;
+        if (!$artist) {
+            flash('danger', 'Artist not found.');
+            redirect('/?r=/admin/artists');
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_verify();
+
+            $remove = !empty($_POST['remove_image']);
+            $imageUrl = trim((string)($_POST['image_url'] ?? ''));
+
+            $upload = $_FILES['image_file'] ?? null;
+            $uploadedPath = null;
+            if (is_array($upload) && ($upload['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $tmp = (string)($upload['tmp_name'] ?? '');
+                $size = (int)($upload['size'] ?? 0);
+                if ($tmp !== '' && $size > 0 && $size <= 3_000_000) {
+                    $info = @getimagesize($tmp);
+                    $mime = is_array($info) ? (string)($info['mime'] ?? '') : '';
+                    $ext = '';
+                    if ($mime === 'image/jpeg') $ext = 'jpg';
+                    elseif ($mime === 'image/png') $ext = 'png';
+                    elseif ($mime === 'image/webp') $ext = 'webp';
+                    elseif ($mime === 'image/gif') $ext = 'gif';
+
+                    if ($ext !== '') {
+                        $dir = APP_ROOT . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'artists';
+                        if (!is_dir($dir)) {
+                            mkdir($dir, 0777, true);
+                        }
+                        $name = 'artist_' . (int)$artist['id'] . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                        $dest = $dir . DIRECTORY_SEPARATOR . $name;
+                        if (@move_uploaded_file($tmp, $dest)) {
+                            $uploadedPath = 'assets/uploads/artists/' . $name;
+                        }
+                    }
+                }
+            }
+
+            if ($remove) {
+                $stmt = $db->prepare('UPDATE artists SET image_url = NULL, updated_at = :u WHERE id = :id');
+                $stmt->execute([':u' => now_db(), ':id' => (int)$artist['id']]);
+                flash('success', 'Artist image removed.');
+            } elseif ($uploadedPath !== null) {
+                $stmt = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                $stmt->execute([':img' => $uploadedPath, ':u' => now_db(), ':id' => (int)$artist['id']]);
+                flash('success', 'Artist image uploaded.');
+            } elseif ($imageUrl !== '') {
+                $stmt = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                $stmt->execute([':img' => $imageUrl, ':u' => now_db(), ':id' => (int)$artist['id']]);
+                flash('success', 'Artist image updated.');
+            } else {
+                flash('info', 'No changes.');
+            }
+
+            redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+        }
+
+        render('admin_artist_form', [
+            'artist' => $artist,
         ]);
         break;
 

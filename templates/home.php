@@ -93,9 +93,9 @@ function href_with(array $params): string {
         <?php else: ?>
           <?php foreach ($topArtists as $a): ?>
             <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3"
-               href="<?= href_with(['r' => '/songs', 'artist' => (string)$a['artist']]) ?>">
+               href="<?= href_with(['r' => '/artist', 'id' => (int)($a['id'] ?? 0)]) ?>">
               <div class="text-truncate">
-                <div class="fw-semibold text-truncate"><?= e((string)$a['artist']) ?></div>
+                <div class="fw-semibold text-truncate"><?= e((string)$a['name']) ?></div>
                 <div class="text-muted small"><?= (int)($a['song_count'] ?? 0) ?> songs</div>
               </div>
               <div class="text-muted small text-nowrap"><?= (int)($a['play_count'] ?? 0) ?> plays</div>

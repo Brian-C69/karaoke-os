@@ -36,4 +36,12 @@
       </div>
     </a>
   </div>
+  <div class="col-md-4">
+    <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/artists">
+      <div class="card-body">
+        <div class="fw-semibold text-dark"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Artists</div>
+        <div class="text-muted small">Manage artist images.</div>
+      </div>
+    </a>
+  </div>
 </div>

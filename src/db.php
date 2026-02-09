@@ -72,6 +72,19 @@ function ensure_schema(PDO $db): void
 
 function migrate_schema(PDO $db): void
 {
+    // artists (entity for name + image)
+    $db->exec(
+        'CREATE TABLE IF NOT EXISTS artists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            image_url TEXT,
+            musicbrainz_id TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );'
+    );
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_artists_updated_at ON artists(updated_at);');
+
     // settings
     $db->exec(
         'CREATE TABLE IF NOT EXISTS settings (
@@ -135,6 +148,13 @@ function migrate_schema(PDO $db): void
     $db->exec('CREATE INDEX IF NOT EXISTS idx_drive_grants_song_id ON drive_grants(song_id);');
     $db->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_drive_grants_unique ON drive_grants(song_id, user_id, file_id);');
 
+    // Seed artists from existing songs (best-effort).
+    $db->exec(
+        'INSERT OR IGNORE INTO artists (name, created_at, updated_at)
+         SELECT DISTINCT TRIM(artist) AS name, datetime(\'now\', \'localtime\'), datetime(\'now\', \'localtime\')
+         FROM songs
+         WHERE artist IS NOT NULL AND TRIM(artist) <> \'\';'
+    );
 }
 
 function table_has_column(PDO $db, string $table, string $column): bool

@@ -22,6 +22,7 @@ require __DIR__ . '/google_drive.php';
 require __DIR__ . '/settings.php';
 require __DIR__ . '/smtp_mailer.php';
 require __DIR__ . '/music_metadata.php';
+require __DIR__ . '/artist_metadata.php';
 require APP_ROOT . '/lib/SimplePager.php';
 
 define('APP_VERSION', app_version());

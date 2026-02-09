@@ -141,6 +141,149 @@ function log_play(PDO $db, int $songId, int $userId): void
     ]);
 }
 
+function upsert_artist(PDO $db, string $name): ?array
+{
+    $name = trim($name);
+    if ($name === '') {
+        return null;
+    }
+
+    $stmt = $db->prepare('SELECT * FROM artists WHERE name = :n LIMIT 1');
+    $stmt->execute([':n' => $name]);
+    $row = $stmt->fetch();
+    if ($row) {
+        // Keep latest casing and touch updated_at.
+        $stmt = $db->prepare('UPDATE artists SET name = :n, updated_at = :u WHERE id = :id');
+        $stmt->execute([':n' => $name, ':u' => now_db(), ':id' => (int)$row['id']]);
+        $stmt = $db->prepare('SELECT * FROM artists WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => (int)$row['id']]);
+        $row = $stmt->fetch();
+        if (is_array($row) && empty($row['image_url']) && empty($row['musicbrainz_id'])) {
+            try {
+                $meta = lookup_artist_image($name);
+                if (is_array($meta)) {
+                    $img = !empty($meta['image_url']) ? (string)$meta['image_url'] : null;
+                    $mb = !empty($meta['musicbrainz_id']) ? (string)$meta['musicbrainz_id'] : null;
+                    if ($img !== null || $mb !== null) {
+                        $stmt = $db->prepare('UPDATE artists SET image_url = COALESCE(image_url, :img), musicbrainz_id = COALESCE(musicbrainz_id, :mb), updated_at = :u WHERE id = :id');
+                    $stmt->execute([
+                        ':img' => $img,
+                        ':mb' => $mb,
+                        ':u' => now_db(),
+                        ':id' => (int)$row['id'],
+                    ]);
+                    $stmt = $db->prepare('SELECT * FROM artists WHERE id = :id LIMIT 1');
+                    $stmt->execute([':id' => (int)$row['id']]);
+                    $row = $stmt->fetch();
+                    }
+                }
+            } catch (Throwable $e) {
+                // ignore
+            }
+        }
+        return is_array($row) ? $row : null;
+    }
+
+    $now = now_db();
+    $imageUrl = null;
+    $mbid = null;
+    try {
+        $meta = lookup_artist_image($name);
+        if (is_array($meta)) {
+            $imageUrl = !empty($meta['image_url']) ? (string)$meta['image_url'] : null;
+            $mbid = !empty($meta['musicbrainz_id']) ? (string)$meta['musicbrainz_id'] : null;
+        }
+    } catch (Throwable $e) {
+        // ignore
+    }
+
+    $stmt = $db->prepare(
+        'INSERT INTO artists (name, image_url, musicbrainz_id, created_at, updated_at)
+         VALUES (:n, :img, :mb, :c, :u)'
+    );
+    $stmt->execute([
+        ':n' => $name,
+        ':img' => $imageUrl,
+        ':mb' => $mbid,
+        ':c' => $now,
+        ':u' => $now,
+    ]);
+    $id = (int)$db->lastInsertId();
+    $stmt = $db->prepare('SELECT * FROM artists WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    return is_array($row) ? $row : null;
+}
+
+function get_artist(PDO $db, int $id): ?array
+{
+    $stmt = $db->prepare(
+        'SELECT
+            a.*,
+            COUNT(DISTINCT s.id) AS song_count,
+            COALESCE(COUNT(p.id), 0) AS play_count
+         FROM artists a
+         LEFT JOIN songs s ON lower(s.artist) = lower(a.name) AND s.is_active = 1
+         LEFT JOIN plays p ON p.song_id = s.id
+         WHERE a.id = :id
+         GROUP BY a.id
+         LIMIT 1'
+    );
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function get_artist_by_name(PDO $db, string $name): ?array
+{
+    $name = trim($name);
+    if ($name === '') {
+        return null;
+    }
+    $stmt = $db->prepare('SELECT * FROM artists WHERE name = :n LIMIT 1');
+    $stmt->execute([':n' => $name]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function count_artists(PDO $db): int
+{
+    return (int)$db->query('SELECT COUNT(*) FROM artists')->fetchColumn();
+}
+
+function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays'): array
+{
+    $orderBy = 'play_count DESC, song_count DESC, a.name ASC';
+    if ($sort === 'songs') {
+        $orderBy = 'song_count DESC, play_count DESC, a.name ASC';
+    } elseif ($sort === 'name') {
+        $orderBy = 'a.name ASC';
+    } elseif ($sort === 'latest') {
+        $orderBy = 'a.updated_at DESC, a.name ASC';
+    }
+
+    $sql = '
+        SELECT
+            a.id,
+            a.name,
+            a.image_url,
+            a.updated_at,
+            COUNT(DISTINCT s.id) AS song_count,
+            COALESCE(COUNT(p.id), 0) AS play_count
+        FROM artists a
+        LEFT JOIN songs s ON lower(s.artist) = lower(a.name) AND s.is_active = 1
+        LEFT JOIN plays p ON p.song_id = s.id
+        GROUP BY a.id
+        ORDER BY ' . $orderBy . '
+        LIMIT :lim OFFSET :off
+    ';
+    $stmt = $db->prepare($sql);
+    $stmt->bindValue(':lim', max(1, $limit), PDO::PARAM_INT);
+    $stmt->bindValue(':off', max(0, $offset), PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
 function list_artists(PDO $db): array
 {
     $sql = '
@@ -369,6 +512,7 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
     }
 
     $now = now_db();
+    upsert_artist($db, $artist);
     if ($id === null) {
         $stmt = $db->prepare(
             'INSERT INTO songs (title, artist, language, album, cover_url, drive_url, drive_file_id, is_active, created_at, updated_at)

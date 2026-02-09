@@ -4,6 +4,9 @@
   const sortSelect = document.getElementById('songsSort');
   const perPageSelect = document.getElementById('songsPerPage');
   const viewInput = document.getElementById('songsView');
+  const artistFixedInput = document.getElementById('songsArtistFixed');
+  const languageFixedInput = document.getElementById('songsLanguageFixed');
+  const idFixedInput = form?.querySelector('input[name="id"]');
   const pageInput = document.getElementById('songsPage');
   const suggestEl = document.getElementById('songsSuggest');
   const resultsEl = document.getElementById('songsResults');
@@ -12,6 +15,7 @@
   if (!form || !qInput || !sortSelect || !perPageSelect || !resultsEl || !pageInput || !viewInput) return;
 
   const viewButtons = Array.from(document.querySelectorAll('[data-songs-view]'));
+  const pageRoute = String(form.dataset.pageRoute || '/songs');
   const getView = () => {
     const v = String(viewInput.value || 'tile').toLowerCase();
     return v === 'list' ? 'list' : 'tile';
@@ -36,8 +40,8 @@
     url.searchParams.set('page', pageInput.value || '1');
 
     const params = new URLSearchParams(window.location.search);
-    const artist = params.get('artist');
-    const language = params.get('language');
+    const artist = (artistFixedInput?.value || params.get('artist') || '').trim();
+    const language = (languageFixedInput?.value || params.get('language') || '').trim();
     if (artist) url.searchParams.set('artist', artist);
     if (language) url.searchParams.set('language', language);
 
@@ -46,7 +50,10 @@
 
   const syncUrl = () => {
     const url = new URL(window.location.href);
-    url.searchParams.set('r', '/songs');
+    url.searchParams.set('r', pageRoute);
+    if (idFixedInput?.value) url.searchParams.set('id', String(idFixedInput.value));
+    if (artistFixedInput?.value) url.searchParams.set('artist', String(artistFixedInput.value));
+    if (languageFixedInput?.value) url.searchParams.set('language', String(languageFixedInput.value));
 
     const q = (qInput.value || '').trim();
     if (q) url.searchParams.set('q', q);

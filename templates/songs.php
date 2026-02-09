@@ -36,7 +36,7 @@ function songs_href(array $params): string {
 
 <div class="card shadow-sm mb-3">
   <div class="card-body">
-    <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end">
+    <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/songs">
       <input type="hidden" name="r" value="/songs">
       <input type="hidden" name="view" id="songsView" value="<?= e($view) ?>">
       <div class="col-12 col-lg-5 position-relative">

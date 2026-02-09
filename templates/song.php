@@ -1,8 +1,16 @@
 <?php
 /** @var array $song */
 /** @var int $playCount */
+/** @var array|null $artistRow */
 /** @var array|null $user */
 ?>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <a class="btn btn-outline-secondary btn-sm"
+     href="<?= e(APP_BASE) ?>/?r=/songs"
+     onclick="if (history.length > 1) { event.preventDefault(); history.back(); }">
+    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back
+  </a>
+</div>
 <div class="row g-3">
   <div class="col-md-4">
     <div class="card shadow-sm">
@@ -19,7 +27,21 @@
     <div class="card shadow-sm">
       <div class="card-body">
         <h1 class="h4 mb-1"><i class="bi bi-music-note-beamed me-2" aria-hidden="true"></i><?= e((string)$song['title']) ?></h1>
-        <div class="text-muted mb-3"><?= e((string)$song['artist']) ?></div>
+        <div class="text-muted mb-3">
+          <?php if (!empty($artistRow['id'])): ?>
+            <a class="link-secondary text-decoration-none"
+               href="<?= e(APP_BASE) ?>/?r=/artist&id=<?= (int)$artistRow['id'] ?>">
+              <?= e((string)$song['artist']) ?>
+            </a>
+          <?php elseif (!empty($song['artist'])): ?>
+            <a class="link-secondary text-decoration-none"
+               href="<?= e(APP_BASE) ?>/?r=/songs&artist=<?= urlencode((string)$song['artist']) ?>">
+              <?= e((string)$song['artist']) ?>
+            </a>
+          <?php else: ?>
+            —
+          <?php endif; ?>
+        </div>
         <div class="row g-2 small mb-3">
           <div class="col-6"><span class="text-muted">Language:</span> <?= e((string)($song['language'] ?? '')) ?: '—' ?></div>
           <div class="col-6"><span class="text-muted">Album:</span> <?= e((string)($song['album'] ?? '')) ?: '—' ?></div>

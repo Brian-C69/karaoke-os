@@ -6,6 +6,9 @@ data/karaoke.sqlite
 data/*.sqlite
 data/*.db
 
+# Uploads
+assets/uploads/
+
 # OS/Editor
 .DS_Store
 Thumbs.db
