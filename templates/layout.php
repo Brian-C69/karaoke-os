@@ -5,7 +5,7 @@
 /** @var string $templateFile */
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,11 +17,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="<?= e(APP_BASE) ?>/assets/js/theme.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="<?= e(APP_BASE) ?>/assets/css/app.css" rel="stylesheet">
 </head>
-<body class="bg-light" data-auth="<?= $user ? '1' : '0' ?>">
+<body class="bg-body-tertiary" data-auth="<?= $user ? '1' : '0' ?>">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="<?= e(APP_BASE) ?>/?r=/">
@@ -40,6 +41,11 @@
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/liked"><i class="bi bi-heart me-1" aria-hidden="true"></i>Most liked</a></li>
         </ul>
         <ul class="navbar-nav">
+          <li class="nav-item d-flex align-items-center me-lg-2">
+            <button type="button" class="btn btn-sm btn-outline-light" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+              <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+            </button>
+          </li>
           <?php if ($user): ?>
             <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/favorites"><i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i>Favorites</a></li>
             <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/playlists"><i class="bi bi-collection-play me-1" aria-hidden="true"></i>Playlists</a></li>
