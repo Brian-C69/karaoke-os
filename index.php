@@ -222,18 +222,29 @@ switch ($route) {
 
     case '/artists':
         $pageTitle = 'Artists';
-        $sort = strtolower(trim((string)($_GET['sort'] ?? 'plays')));
-        if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
-            $sort = 'plays';
+        $q = trim((string)($_GET['q'] ?? ''));
+        $sort = strtolower(trim((string)($_GET['sort'] ?? 'latest')));
+        if (!in_array($sort, ['latest', 'plays', 'songs', 'name'], true)) {
+            $sort = 'latest';
+        }
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
         }
         $page = max(1, (int)($_GET['page'] ?? 1));
-        $perPage = 20;
-        $total = count_artists($db);
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        $perPage = min(100, $perPage);
+        $total = count_artists($db, $q);
         $pager = new SimplePager($total, $page, $perPage);
         render('artists', [
+            'q' => $q,
             'sort' => $sort,
+            'view' => $view,
             'pager' => $pager,
-            'artists' => find_artists($db, $pager->limit(), $pager->offset(), $sort),
+            'artists' => find_artists($db, $pager->limit(), $pager->offset(), $sort, $q),
         ]);
         break;
 
@@ -318,6 +329,34 @@ switch ($route) {
             ];
         }, array_slice($songs, 0, 200));
         echo json_encode(['ok' => true, 'songs' => $songs, 'pager' => $pager->toArray()], JSON_UNESCAPED_SLASHES);
+        exit;
+
+    case '/api/artists':
+        header('Content-Type: application/json; charset=utf-8');
+        $q = trim((string)($_GET['q'] ?? ''));
+        $sort = strtolower(trim((string)($_GET['sort'] ?? 'latest')));
+        if (!in_array($sort, ['latest', 'plays', 'songs', 'name'], true)) {
+            $sort = 'latest';
+        }
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        $perPage = min(100, $perPage);
+        $total = count_artists($db, $q);
+        $pager = new SimplePager($total, $page, $perPage);
+        $rows = find_artists($db, $pager->limit(), $pager->offset(), $sort, $q);
+        $artists = array_map(static function (array $a): array {
+            return [
+                'id' => (int)($a['id'] ?? 0),
+                'name' => (string)($a['name'] ?? ''),
+                'image_url' => (string)($a['image_url'] ?? ''),
+                'song_count' => (int)($a['song_count'] ?? 0),
+                'play_count' => (int)($a['play_count'] ?? 0),
+            ];
+        }, array_slice($rows, 0, 500));
+        echo json_encode(['ok' => true, 'artists' => $artists, 'pager' => $pager->toArray()], JSON_UNESCAPED_SLASHES);
         exit;
 
     case '/api/llm/songs':

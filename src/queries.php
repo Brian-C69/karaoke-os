@@ -246,12 +246,18 @@ function get_artist_by_name(PDO $db, string $name): ?array
     return $row ?: null;
 }
 
-function count_artists(PDO $db): int
+function count_artists(PDO $db, string $q = ''): int
 {
-    return (int)$db->query('SELECT COUNT(*) FROM artists')->fetchColumn();
+    $q = trim($q);
+    if ($q === '') {
+        return (int)$db->query('SELECT COUNT(*) FROM artists')->fetchColumn();
+    }
+    $stmt = $db->prepare('SELECT COUNT(*) FROM artists WHERE name LIKE :q');
+    $stmt->execute([':q' => '%' . $q . '%']);
+    return (int)$stmt->fetchColumn();
 }
 
-function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays'): array
+function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays', string $q = ''): array
 {
     $orderBy = 'play_count DESC, song_count DESC, a.name ASC';
     if ($sort === 'songs') {
@@ -260,6 +266,14 @@ function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays'):
         $orderBy = 'a.name ASC';
     } elseif ($sort === 'latest') {
         $orderBy = 'a.updated_at DESC, a.name ASC';
+    }
+
+    $q = trim($q);
+    $where = '';
+    $params = [];
+    if ($q !== '') {
+        $where = 'WHERE a.name LIKE :q';
+        $params[':q'] = '%' . $q . '%';
     }
 
     $sql = '
@@ -273,11 +287,15 @@ function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays'):
         FROM artists a
         LEFT JOIN songs s ON lower(s.artist) = lower(a.name) AND s.is_active = 1
         LEFT JOIN plays p ON p.song_id = s.id
+        ' . $where . '
         GROUP BY a.id
         ORDER BY ' . $orderBy . '
         LIMIT :lim OFFSET :off
     ';
     $stmt = $db->prepare($sql);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, PDO::PARAM_STR);
+    }
     $stmt->bindValue(':lim', max(1, $limit), PDO::PARAM_INT);
     $stmt->bindValue(':off', max(0, $offset), PDO::PARAM_INT);
     $stmt->execute();
