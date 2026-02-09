@@ -14,7 +14,8 @@
   const loadTheme = () => {
     const saved = (localStorage.getItem(KEY) || '').toLowerCase();
     if (saved === 'light' || saved === 'dark') return saved;
-    return prefersDark() ? 'dark' : 'light';
+    // Default to light unless the user explicitly chooses otherwise.
+    return 'light';
   };
 
   const setTheme = (theme) => {
