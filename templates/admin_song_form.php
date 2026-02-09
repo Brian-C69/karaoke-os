@@ -23,7 +23,7 @@ $backHref = e(APP_BASE) . '/?' . http_build_query($backParams);
         <div class="col-md-6">
           <label class="form-label">Artist *</label>
           <div class="position-relative">
-            <input class="form-control" name="artist" required value="<?= e((string)($song['artist'] ?? '')) ?>" autocomplete="off" placeholder="Type once, then pick from suggestions">
+            <input class="form-control" name="artist" required value="<?= e((string)($song['artist'] ?? '')) ?>" autocomplete="off" placeholder="Type once, then pick from suggestions" <?= $song ? '' : 'autofocus' ?>>
             <div class="list-group position-absolute w-100 shadow-sm d-none" id="artistSuggest" style="z-index: 5;"></div>
           </div>
         </div>
