@@ -797,6 +797,110 @@ function top_liked_songs(PDO $db, int $limit): array
     return $stmt->fetchAll();
 }
 
+function count_recent_songs(PDO $db, int $userId, array $filters, string $mode = 'unique'): int
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return 0;
+
+    $mode = strtolower(trim($mode));
+    if (!in_array($mode, ['unique', 'history'], true)) {
+        $mode = 'unique';
+    }
+
+    $where = ['p.user_id = :u', 's.is_active = 1'];
+    $params = [':u' => $userId];
+
+    if (!empty($filters['q'])) {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $filters['q'] . '%';
+    }
+
+    $countExpr = $mode === 'history' ? 'COUNT(*)' : 'COUNT(DISTINCT p.song_id)';
+    $sql = '
+        SELECT ' . $countExpr . '
+        FROM plays p
+        INNER JOIN songs s ON s.id = p.song_id
+        WHERE ' . implode(' AND ', $where) . '
+    ';
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    return (int)$stmt->fetchColumn();
+}
+
+function find_recent_songs(PDO $db, int $userId, array $filters, int $limit, int $offset, string $mode = 'unique'): array
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return [];
+
+    $mode = strtolower(trim($mode));
+    if (!in_array($mode, ['unique', 'history'], true)) {
+        $mode = 'unique';
+    }
+
+    $where = ['p.user_id = :u', 's.is_active = 1'];
+    $params = [':u' => $userId];
+
+    if (!empty($filters['q'])) {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $filters['q'] . '%';
+    }
+
+    $sort = strtolower(trim((string)($filters['sort'] ?? 'recent')));
+    if (!in_array($sort, ['recent', 'plays', 'title'], true)) {
+        $sort = 'recent';
+    }
+
+    if ($mode === 'history') {
+        $sql = '
+            SELECT
+                s.*,
+                p.played_at AS played_at
+            FROM plays p
+            INNER JOIN songs s ON s.id = p.song_id
+            WHERE ' . implode(' AND ', $where) . '
+            ORDER BY p.played_at DESC
+            LIMIT :lim OFFSET :off
+        ';
+        $stmt = $db->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v, $k === ':u' ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':lim', max(1, $limit), PDO::PARAM_INT);
+        $stmt->bindValue(':off', max(0, $offset), PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    $orderBy = 'last_played_at DESC';
+    if ($sort === 'plays') {
+        $orderBy = 'user_play_count DESC, last_played_at DESC, s.title ASC';
+    } elseif ($sort === 'title') {
+        $orderBy = 's.title ASC';
+    }
+
+    $sql = '
+        SELECT
+            s.*,
+            MAX(p.played_at) AS last_played_at,
+            COUNT(p.id) AS user_play_count
+        FROM plays p
+        INNER JOIN songs s ON s.id = p.song_id
+        WHERE ' . implode(' AND ', $where) . '
+        GROUP BY s.id
+        ORDER BY ' . $orderBy . '
+        LIMIT :lim OFFSET :off
+    ';
+
+    $stmt = $db->prepare($sql);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, $k === ':u' ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':lim', max(1, $limit), PDO::PARAM_INT);
+    $stmt->bindValue(':off', max(0, $offset), PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
 function top_artists(PDO $db, int $limit): array
 {
     $stmt = $db->prepare(

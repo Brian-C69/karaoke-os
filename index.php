@@ -322,6 +322,40 @@ switch ($route) {
         ]);
         break;
 
+    case '/recent':
+        require_login();
+        $pageTitle = 'Recently played';
+        $filters = [
+            'q' => trim((string)($_GET['q'] ?? '')),
+            'sort' => trim((string)($_GET['sort'] ?? 'recent')),
+            'mode' => trim((string)($_GET['mode'] ?? 'unique')),
+        ];
+        $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
+        if (!in_array($view, ['tile', 'list'], true)) {
+            $view = 'tile';
+        }
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        $perPage = min(100, $perPage);
+        $uid = (int)current_user()['id'];
+        $mode = strtolower(trim((string)$filters['mode']));
+        $total = count_recent_songs($db, $uid, $filters, $mode);
+        $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_recent_songs($db, $uid, $filters, $pager->limit(), $pager->offset(), $mode);
+        $favoriteIds = favorite_song_ids($db, $uid, array_map(fn ($s) => (int)$s['id'], $songs));
+        render('recent', [
+            'filters' => $filters,
+            'mode' => $mode,
+            'view' => $view,
+            'pager' => $pager,
+            'songs' => $songs,
+            'favoriteIds' => $favoriteIds,
+        ]);
+        break;
+
     case '/liked':
         $pageTitle = 'Most liked';
         $view = strtolower(trim((string)($_GET['view'] ?? 'tile')));
@@ -621,6 +655,45 @@ switch ($route) {
         }
         $removed = remove_song_from_playlist($db, (int)current_user()['id'], $playlistId, $songId);
         json_response(['ok' => true, 'removed' => $removed]);
+
+    case '/api/recent':
+        header('Content-Type: application/json; charset=utf-8');
+        if (!current_user()) {
+            json_response(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        $filters = [
+            'q' => trim((string)($_GET['q'] ?? '')),
+            'sort' => trim((string)($_GET['sort'] ?? 'recent')),
+            'mode' => trim((string)($_GET['mode'] ?? 'unique')),
+        ];
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        if ($perPage <= 0) $perPage = 20;
+        $perPage = min(100, $perPage);
+        $uid = (int)current_user()['id'];
+        $mode = strtolower(trim((string)$filters['mode']));
+        $total = count_recent_songs($db, $uid, $filters, $mode);
+        $pager = new SimplePager($total, $page, $perPage);
+        $songs = find_recent_songs($db, $uid, $filters, $pager->limit(), $pager->offset(), $mode);
+        $favSet = favorite_song_ids($db, $uid, array_map(fn ($s) => (int)$s['id'], $songs));
+        $songs = array_map(static function (array $s) use ($mode, $favSet): array {
+            $lang = (string)($s['language'] ?? '');
+            $id = (int)($s['id'] ?? 0);
+            $playedAt = $mode === 'history' ? (string)($s['played_at'] ?? '') : (string)($s['last_played_at'] ?? '');
+            return [
+                'id' => $id,
+                'title' => (string)($s['title'] ?? ''),
+                'artist' => (string)($s['artist'] ?? ''),
+                'cover_url' => (string)($s['cover_url'] ?? ''),
+                'language' => $lang,
+                'language_flag' => language_flag_url($lang) ?: null,
+                'favorited' => !empty($favSet[$id]),
+                'played_at' => $playedAt,
+                'user_play_count' => $mode === 'history' ? 1 : (int)($s['user_play_count'] ?? 0),
+            ];
+        }, array_slice($songs, 0, 200));
+        echo json_encode(['ok' => true, 'songs' => $songs, 'pager' => $pager->toArray()], JSON_UNESCAPED_SLASHES);
+        exit;
 
     case '/api/artists':
         header('Content-Type: application/json; charset=utf-8');

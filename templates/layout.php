@@ -39,6 +39,9 @@
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/languages"><i class="bi bi-translate me-1" aria-hidden="true"></i>Languages</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/top"><i class="bi bi-trophy me-1" aria-hidden="true"></i>Top 100</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/liked"><i class="bi bi-heart me-1" aria-hidden="true"></i>Most liked</a></li>
+          <?php if ($user): ?>
+            <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/recent"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Recent</a></li>
+          <?php endif; ?>
         </ul>
         <ul class="navbar-nav">
           <li class="nav-item d-flex align-items-center me-lg-2">

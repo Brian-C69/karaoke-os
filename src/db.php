@@ -198,6 +198,9 @@ function migrate_schema(PDO $db): void
     );
     $db->exec('CREATE INDEX IF NOT EXISTS idx_playlist_songs_playlist_id ON playlist_songs(playlist_id);');
     $db->exec('CREATE INDEX IF NOT EXISTS idx_playlist_songs_song_id ON playlist_songs(song_id);');
+
+    // recent plays (per-user history)
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_plays_user_played_at ON plays(user_id, played_at DESC);');
 }
 
 function table_has_column(PDO $db, string $table, string $column): bool

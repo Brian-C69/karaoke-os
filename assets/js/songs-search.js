@@ -6,6 +6,7 @@
   const viewInput = document.getElementById('songsView');
   const artistFixedInput = document.getElementById('songsArtistFixed');
   const languageFixedInput = document.getElementById('songsLanguageFixed');
+  const recentModeSelect = document.getElementById('recentMode');
   const idFixedInput = form?.querySelector('input[name="id"]');
   const pageInput = document.getElementById('songsPage');
   const suggestEl = document.getElementById('songsSuggest');
@@ -18,6 +19,7 @@
   const viewButtons = Array.from(document.querySelectorAll('[data-songs-view]'));
   const pageRoute = String(form.dataset.pageRoute || '/songs');
   const apiRoute = String(form.dataset.apiRoute || '/api/songs');
+  const renderMode = String(form.dataset.renderMode || 'songs');
   const isAuthed = document.body?.dataset?.auth === '1';
   const getView = () => {
     const v = String(viewInput.value || 'tile').toLowerCase();
@@ -42,6 +44,7 @@
     url.searchParams.set('per_page', perPageSelect.value || '20');
     url.searchParams.set('page', pageInput.value || '1');
     if (idFixedInput?.value) url.searchParams.set('id', String(idFixedInput.value));
+    if (recentModeSelect?.value) url.searchParams.set('mode', String(recentModeSelect.value));
 
     const params = new URLSearchParams(window.location.search);
     const artist = (artistFixedInput?.value || params.get('artist') || '').trim();
@@ -58,6 +61,7 @@
     if (idFixedInput?.value) url.searchParams.set('id', String(idFixedInput.value));
     if (artistFixedInput?.value) url.searchParams.set('artist', String(artistFixedInput.value));
     if (languageFixedInput?.value) url.searchParams.set('language', String(languageFixedInput.value));
+    if (recentModeSelect?.value) url.searchParams.set('mode', String(recentModeSelect.value));
 
     const q = (qInput.value || '').trim();
     if (q) url.searchParams.set('q', q);
@@ -150,6 +154,13 @@
         `
         : '';
 
+      const playedAt = String(s.played_at || '').trim();
+      const playedAtShort = playedAt ? escapeHtml(playedAt.slice(0, 16)) : '—';
+      const metaLeft =
+        renderMode === 'recent'
+          ? `<i class="bi bi-clock-history me-1" aria-hidden="true"></i>${playedAtShort}`
+          : `${Number(s.play_count || 0)} plays`;
+
       return `
         <div class="col-6 col-md-4 col-lg-3">
           <div class="card song-card h-100 shadow-sm position-relative song-item">
@@ -162,7 +173,7 @@
               </div>
               <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
               <div class="d-flex align-items-center justify-content-between text-muted small">
-                <div>${Number(s.play_count || 0)} plays</div>
+                <div>${metaLeft}</div>
                 <div>${flagHtml}</div>
               </div>
             </div>
@@ -208,6 +219,13 @@
         `
         : '';
 
+      const playedAt = String(s.played_at || '').trim();
+      const playedAtShort = playedAt ? escapeHtml(playedAt.slice(0, 16)) : '—';
+      const metaRight =
+        renderMode === 'recent'
+          ? `<i class="bi bi-clock-history me-1" aria-hidden="true"></i>${playedAtShort}`
+          : `<span>${Number(s.play_count || 0)} plays</span>`;
+
       return `
         <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 position-relative song-item">
           <a class="stretched-link" href="?r=/song&id=${encodeURIComponent(s.id)}" aria-label="Open song"></a>
@@ -221,9 +239,7 @@
             </div>
             <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
           </div>
-          <div class="d-flex align-items-center gap-2 text-muted small text-nowrap">${flagHtml}<span>${Number(
-    s.play_count || 0
-  )} plays</span></div>
+          <div class="d-flex align-items-center gap-2 text-muted small text-nowrap">${flagHtml}${metaRight}</div>
         </div>
       `;
     });
@@ -329,6 +345,10 @@
     fetchAndRender({ showSuggestions: false });
   });
   perPageSelect.addEventListener('change', () => {
+    setPage(1);
+    fetchAndRender({ showSuggestions: false });
+  });
+  recentModeSelect?.addEventListener('change', () => {
     setPage(1);
     fetchAndRender({ showSuggestions: false });
   });
