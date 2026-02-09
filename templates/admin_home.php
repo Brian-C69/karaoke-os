@@ -1,6 +1,6 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h4 m-0"><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Admin</h1>
-  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/">Back</a>
+  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
 </div>
 
 <div class="row g-3">

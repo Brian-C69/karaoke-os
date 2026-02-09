@@ -4,7 +4,7 @@
 /** @var array|null $artistRow */
 /** @var array|null $user */
 ?>
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-end mb-3">
   <a class="btn btn-outline-secondary btn-sm"
      href="<?= e(APP_BASE) ?>/?r=/songs"
      onclick="if (history.length > 1) { event.preventDefault(); history.back(); }">

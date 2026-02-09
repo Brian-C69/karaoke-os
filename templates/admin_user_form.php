@@ -1,6 +1,6 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h4 m-0"><i class="bi bi-person-plus me-2" aria-hidden="true"></i>Admin · Add User</h1>
-  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/admin/users">Back</a>
+  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/admin/users"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
 </div>
 
 <div class="card shadow-sm">

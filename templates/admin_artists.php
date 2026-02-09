@@ -20,7 +20,7 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
         <option value="name" <?= $sort === 'name' ? 'selected' : '' ?>>A–Z</option>
       </select>
     </form>
-    <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/admin"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Admin home</a>
+    <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/admin"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
   </div>
 </div>
 
@@ -89,4 +89,3 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
     </nav>
   </div>
 <?php endif; ?>
-
