@@ -5,6 +5,15 @@
 /** @var array|null $user */
 /** @var bool|null $favorited */
 $favorited = !empty($favorited);
+
+$artistImg = '';
+if (!empty($artistRow) && is_array($artistRow)) {
+  $artistImg = trim((string)($artistRow['image_url'] ?? ''));
+  $artistImgIsExternal = $artistImg !== '' && is_safe_external_url($artistImg);
+  if ($artistImg !== '' && !$artistImgIsExternal) {
+    $artistImg = e(APP_BASE) . '/' . ltrim($artistImg, '/');
+  }
+}
 ?>
 <div class="d-flex align-items-center justify-content-end mb-3">
   <a class="btn btn-outline-secondary btn-sm"
@@ -34,7 +43,7 @@ $favorited = !empty($favorited);
           </h1>
           <?php if (!empty($user)): ?>
             <button type="button"
-                    class="btn btn-sm btn-link p-0 fav-btn song-action js-fav-toggle <?= $favorited ? 'text-danger' : 'text-muted' ?>"
+                    class="btn btn-link p-1 fav-btn fav-btn-lg song-action js-fav-toggle <?= $favorited ? 'text-danger' : 'text-muted' ?>"
                     data-song-id="<?= (int)$song['id'] ?>"
                     data-favorited="<?= $favorited ? '1' : '0' ?>"
                     aria-label="Favorite"
@@ -46,15 +55,29 @@ $favorited = !empty($favorited);
         </div>
         <div class="text-muted mb-3">
           <?php if (!empty($artistRow['id'])): ?>
-            <a class="link-secondary text-decoration-none"
-               href="<?= e(APP_BASE) ?>/?r=/artist&id=<?= (int)$artistRow['id'] ?>">
-              <?= e((string)$song['artist']) ?>
-            </a>
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:36px;height:36px;">
+                <?php if ($artistImg !== ''): ?>
+                  <img src="<?= $artistImg ?>" alt="" style="width:36px;height:36px;object-fit:cover;">
+                <?php else: ?>
+                  <i class="bi bi-person-circle fs-3" aria-hidden="true"></i>
+                <?php endif; ?>
+              </div>
+              <a class="link-secondary text-decoration-none"
+                 href="<?= e(APP_BASE) ?>/?r=/artist&id=<?= (int)$artistRow['id'] ?>">
+                <span class="fs-5 fw-semibold"><?= e((string)$song['artist']) ?></span>
+              </a>
+            </div>
           <?php elseif (!empty($song['artist'])): ?>
-            <a class="link-secondary text-decoration-none"
-               href="<?= e(APP_BASE) ?>/?r=/songs&artist=<?= urlencode((string)$song['artist']) ?>">
-              <?= e((string)$song['artist']) ?>
-            </a>
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:36px;height:36px;">
+                <i class="bi bi-person-circle fs-3" aria-hidden="true"></i>
+              </div>
+              <a class="link-secondary text-decoration-none"
+                 href="<?= e(APP_BASE) ?>/?r=/songs&artist=<?= urlencode((string)$song['artist']) ?>">
+                <span class="fs-5 fw-semibold"><?= e((string)$song['artist']) ?></span>
+              </a>
+            </div>
           <?php else: ?>
             —
           <?php endif; ?>
@@ -108,7 +131,7 @@ $favorited = !empty($favorited);
           <h5 class="modal-title"><i class="bi bi-collection-play me-2" aria-hidden="true"></i>Add to playlist</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+          <div class="modal-body">
           <div class="mb-2">
             <div class="list-group" data-playlist-list></div>
           </div>
@@ -119,8 +142,8 @@ $favorited = !empty($favorited);
           <div class="border-top pt-3">
             <label class="form-label">Or create a new playlist</label>
             <div class="d-flex gap-2">
-              <input class="form-control" placeholder="Playlist name" data-playlist-create-name>
-              <button type="button" class="btn btn-outline-primary" data-playlist-create-btn>
+              <input class="form-control playlist-create-name" placeholder="Playlist name" data-playlist-create-name>
+              <button type="button" class="btn btn-outline-primary flex-shrink-0" data-playlist-create-btn>
                 <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Create & add
               </button>
             </div>

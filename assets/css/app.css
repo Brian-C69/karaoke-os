@@ -14,3 +14,9 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-seri
 .lang-flag-card { width: 100%; height: 100%; object-fit: cover; display: block; }
 .song-action { position: relative; z-index: 3; }
 .fav-btn { line-height: 1; }
+.fav-btn i { font-size: 1.25rem; }
+.fav-btn-lg i { font-size: 1.8rem; }
+.playlist-create-name { max-width: 240px; }
+@media (max-width: 575.98px) {
+  .playlist-create-name { max-width: 100%; }
+}
