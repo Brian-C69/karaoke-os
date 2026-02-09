@@ -17,10 +17,12 @@
       </div>
       <div class="col-md-8">
         <label class="form-label">Email</label>
-        <form class="d-flex gap-2" method="post" action="<?= e(APP_BASE) ?>/?r=/account/update-email">
+        <form class="d-flex gap-2 flex-wrap" method="post" action="<?= e(APP_BASE) ?>/?r=/account/update-email">
           <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-          <input class="form-control" name="email" value="<?= e((string)($userFull['email'] ?? '')) ?>" placeholder="you@example.com" required>
-          <button class="btn btn-outline-primary"><i class="bi bi-envelope me-1" aria-hidden="true"></i>Update</button>
+          <div class="flex-grow-1" style="min-width: 220px; max-width: 460px;">
+            <input class="form-control form-control-sm" name="email" value="<?= e((string)($userFull['email'] ?? '')) ?>" placeholder="you@example.com" required>
+          </div>
+          <button class="btn btn-sm btn-outline-primary flex-shrink-0"><i class="bi bi-envelope me-1" aria-hidden="true"></i>Update</button>
         </form>
         <div class="text-muted small mt-2">
           Status:
