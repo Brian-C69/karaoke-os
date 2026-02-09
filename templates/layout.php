@@ -26,7 +26,7 @@
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="<?= e(APP_BASE) ?>/?r=/">
         <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="" width="32" height="32" class="me-2" style="object-fit:contain;">
-        Karaoke OS
+        Karaoke <span style="color:#db4143;">OS</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
         <span class="navbar-toggler-icon"></span>
