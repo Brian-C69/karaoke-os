@@ -124,6 +124,11 @@
       const coverHtml = cover
         ? `<img src="${escapeAttr(cover)}" alt="">`
         : `<div class="placeholder"><i class="bi bi-image me-1" aria-hidden="true"></i>No cover</div>`;
+      const lang = String(s.language || '').trim();
+      const langFlag = String(s.language_flag || '').trim();
+      const flagHtml = langFlag
+        ? `<img class="lang-flag lang-flag-sm" src="${escapeAttr(langFlag)}" alt="${escapeAttr(lang)}" title="${escapeAttr(lang)}">`
+        : '';
 
       return `
         <div class="col-6 col-md-4 col-lg-3">
@@ -134,7 +139,10 @@
             <div class="card-body">
               <div class="fw-semibold text-dark text-truncate">${escapeHtml(s.title || '')}</div>
               <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
-              <div class="text-muted small">${Number(s.play_count || 0)} plays</div>
+              <div class="d-flex align-items-center justify-content-between text-muted small">
+                <div>${flagHtml}</div>
+                <div>${Number(s.play_count || 0)} plays</div>
+              </div>
             </div>
           </a>
         </div>
@@ -155,6 +163,11 @@
       const coverHtml = cover
         ? `<img src="${escapeAttr(cover)}" alt="" style="width:44px;height:44px;object-fit:cover;">`
         : `<i class="bi bi-image" aria-hidden="true"></i>`;
+      const lang = String(s.language || '').trim();
+      const langFlag = String(s.language_flag || '').trim();
+      const flagHtml = langFlag
+        ? `<img class="lang-flag lang-flag-sm" src="${escapeAttr(langFlag)}" alt="${escapeAttr(lang)}" title="${escapeAttr(lang)}">`
+        : '';
 
       return `
         <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="?r=/song&id=${encodeURIComponent(
@@ -167,7 +180,10 @@
             <div class="fw-semibold text-truncate">${escapeHtml(s.title || '')}</div>
             <div class="text-muted small text-truncate">${escapeHtml(s.artist || '')}</div>
           </div>
-          <div class="text-muted small text-nowrap">${Number(s.play_count || 0)} plays</div>
+          <div class="d-flex align-items-center gap-2 text-muted small text-nowrap">
+            ${flagHtml}
+            <span>${Number(s.play_count || 0)} plays</span>
+          </div>
         </a>
       `;
     });

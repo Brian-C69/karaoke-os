@@ -98,6 +98,7 @@ function songs_href(array $params): string {
     <?php if ($view === 'list'): ?>
       <div class="list-group shadow-sm" id="songsList">
         <?php foreach ($songs as $s): ?>
+          <?php $flag = language_flag_url((string)($s['language'] ?? '')); ?>
           <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
             <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:44px;height:44px;">
               <?php if (!empty($s['cover_url'])): ?>
@@ -110,13 +111,19 @@ function songs_href(array $params): string {
               <div class="fw-semibold text-truncate"><?= e((string)$s['title']) ?></div>
               <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
             </div>
-            <div class="text-muted small text-nowrap"><?= (int)$s['play_count'] ?> plays</div>
+            <div class="d-flex align-items-center gap-2 text-muted small text-nowrap">
+              <?php if ($flag): ?>
+                <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
+              <?php endif; ?>
+              <span><?= (int)$s['play_count'] ?> plays</span>
+            </div>
           </a>
         <?php endforeach; ?>
       </div>
     <?php else: ?>
       <div class="row g-3" id="songsGrid">
         <?php foreach ($songs as $s): ?>
+          <?php $flag = language_flag_url((string)($s['language'] ?? '')); ?>
           <div class="col-6 col-md-4 col-lg-3">
             <a class="card song-card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
               <div class="cover">
@@ -129,7 +136,14 @@ function songs_href(array $params): string {
               <div class="card-body">
                 <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
                 <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
-                <div class="text-muted small"><?= (int)$s['play_count'] ?> plays</div>
+                <div class="d-flex align-items-center justify-content-between text-muted small">
+                  <div>
+                    <?php if ($flag): ?>
+                      <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
+                    <?php endif; ?>
+                  </div>
+                  <div><?= (int)$s['play_count'] ?> plays</div>
+                </div>
               </div>
             </a>
           </div>

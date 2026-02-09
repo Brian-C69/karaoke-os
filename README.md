@@ -2,13 +2,14 @@
 
 Simple local-first karaoke library browser + usage tracking.
 
-**Version:** 0.1.18
+**Version:** 0.1.19
 
 ## What it does
 - Public can browse songs (artists, languages, Top 100 rankings).
 - Logged-in users can access the Google Drive MP4 link (and every play is logged for analytics).
 - Every play is logged for analytics (by song + artist).
 - Admin can add/edit songs and view analytics.
+- Language display uses Square Flags icons (vendored under `assets/vendor/square-flags/`).
 
 ## Adding songs (fast)
 Admin only needs to enter:

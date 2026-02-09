@@ -109,3 +109,69 @@ function render(string $template, array $vars = []): void
 
     require APP_ROOT . '/templates/layout.php';
 }
+
+function language_to_flag_code(string $language): ?string
+{
+    $language = strtoupper(trim($language));
+    if ($language === '' || $language === 'UNKNOWN') {
+        return null;
+    }
+
+    // Normalize separators (e.g. en-US, en_US).
+    $language = str_replace('_', '-', $language);
+
+    // Prefer region if present.
+    $parts = explode('-', $language);
+    $lang = $parts[0] ?? $language;
+    $region = $parts[1] ?? '';
+
+    // Common mappings: language -> representative flag.
+    $map = [
+        'EN' => 'GB',
+        'ZH' => 'CN',
+        'JA' => 'JP',
+        'KO' => 'KR',
+        'MS' => 'MY',
+        'BM' => 'MY',
+        'ID' => 'ID',
+        'TH' => 'TH',
+        'VI' => 'VN',
+        'TL' => 'PH',
+        'FIL' => 'PH',
+        'AR' => 'SA',
+        'HI' => 'IN',
+    ];
+
+    if ($region !== '') {
+        // If the region looks like a country code, use it directly.
+        if (preg_match('/^[A-Z]{2}$/', $region)) {
+            return $region;
+        }
+    }
+
+    if (isset($map[$lang])) {
+        return $map[$lang];
+    }
+
+    // If it already looks like a country code, pass through.
+    if (preg_match('/^[A-Z]{2}$/', $language)) {
+        return $language;
+    }
+
+    return null;
+}
+
+function language_flag_url(string $language): ?string
+{
+    $code = language_to_flag_code($language);
+    if (!$code) {
+        return null;
+    }
+    $code = strtolower($code);
+    static $exists = [];
+    if (!array_key_exists($code, $exists)) {
+        $exists[$code] = is_file(APP_ROOT . '/assets/vendor/square-flags/flags/' . $code . '.svg');
+    }
+    if (!$exists[$code]) return null;
+    return APP_BASE . '/assets/vendor/square-flags/flags/' . $code . '.svg';
+}

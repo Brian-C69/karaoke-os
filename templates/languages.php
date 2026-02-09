@@ -16,8 +16,16 @@
       </thead>
       <tbody>
       <?php foreach ($languages as $l): ?>
+        <?php $flag = language_flag_url((string)($l['language'] ?? '')); ?>
         <tr>
-          <td><a href="<?= e(APP_BASE) ?>/?r=/songs&language=<?= urlencode((string)$l['language']) ?>"><?= e((string)$l['language']) ?></a></td>
+          <td>
+            <a href="<?= e(APP_BASE) ?>/?r=/songs&language=<?= urlencode((string)$l['language']) ?>" class="text-decoration-none d-inline-flex align-items-center gap-2">
+              <?php if ($flag): ?>
+                <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)$l['language']) ?>" title="<?= e((string)$l['language']) ?>">
+              <?php endif; ?>
+              <span><?= e((string)$l['language']) ?></span>
+            </a>
+          </td>
           <td class="text-end"><?= (int)$l['song_count'] ?></td>
           <td class="text-end"><?= (int)$l['play_count'] ?></td>
         </tr>

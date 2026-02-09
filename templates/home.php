@@ -117,10 +117,16 @@ function href_with(array $params): string {
           <div class="p-3 text-muted small">No languages yet.</div>
         <?php else: ?>
           <?php foreach ($topLanguages as $l): ?>
+            <?php $flag = language_flag_url((string)($l['language'] ?? '')); ?>
             <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3"
                href="<?= href_with(['r' => '/songs', 'language' => (string)$l['language']]) ?>">
               <div class="text-truncate">
-                <div class="fw-semibold text-truncate"><?= e((string)$l['language']) ?></div>
+                <div class="fw-semibold text-truncate d-flex align-items-center gap-2">
+                  <?php if ($flag): ?>
+                    <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)$l['language']) ?>" title="<?= e((string)$l['language']) ?>">
+                  <?php endif; ?>
+                  <span><?= e((string)$l['language']) ?></span>
+                </div>
                 <div class="text-muted small"><?= (int)($l['song_count'] ?? 0) ?> songs</div>
               </div>
               <div class="text-muted small text-nowrap"><?= (int)($l['play_count'] ?? 0) ?> plays</div>

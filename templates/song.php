@@ -43,7 +43,15 @@
           <?php endif; ?>
         </div>
         <div class="row g-2 small mb-3">
-          <div class="col-6"><span class="text-muted">Language:</span> <?= e((string)($song['language'] ?? '')) ?: '—' ?></div>
+          <div class="col-6">
+            <span class="text-muted">Language:</span>
+            <?php $flag = language_flag_url((string)($song['language'] ?? '')); ?>
+            <?php if ($flag): ?>
+              <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)($song['language'] ?? '')) ?>" title="<?= e((string)($song['language'] ?? '')) ?>">
+            <?php else: ?>
+              <?= e((string)($song['language'] ?? '')) ?: '—' ?>
+            <?php endif; ?>
+          </div>
           <div class="col-6"><span class="text-muted">Album:</span> <?= e((string)($song['album'] ?? '')) ?: '—' ?></div>
           <div class="col-6"><span class="text-muted">Plays:</span> <?= (int)$playCount ?></div>
         </div>

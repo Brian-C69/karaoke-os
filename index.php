@@ -325,11 +325,14 @@ switch ($route) {
         $songs = find_songs($db, $filters, $pager->limit(), $pager->offset());
         // Keep payload small for AJAX.
         $songs = array_map(static function (array $s): array {
+            $lang = (string)($s['language'] ?? '');
             return [
                 'id' => (int)($s['id'] ?? 0),
                 'title' => (string)($s['title'] ?? ''),
                 'artist' => (string)($s['artist'] ?? ''),
                 'cover_url' => (string)($s['cover_url'] ?? ''),
+                'language' => $lang,
+                'language_flag' => language_flag_url($lang) ?: null,
                 'play_count' => (int)($s['play_count'] ?? 0),
             ];
         }, array_slice($songs, 0, 200));
