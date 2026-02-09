@@ -123,7 +123,7 @@ function href_with(array $params): string {
               <div class="text-truncate">
                 <div class="fw-semibold text-truncate d-flex align-items-center gap-2">
                   <?php if ($flag): ?>
-                    <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)$l['language']) ?>" title="<?= e((string)$l['language']) ?>">
+                    <img class="lang-flag lang-flag-xs lang-flag-circle" src="<?= e($flag) ?>" alt="<?= e((string)$l['language']) ?>" title="<?= e((string)$l['language']) ?>">
                   <?php endif; ?>
                   <span><?= e((string)$l['language']) ?></span>
                 </div>

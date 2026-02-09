@@ -1,36 +1,35 @@
 <?php /** @var array $languages */ ?>
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
   <h1 class="h4 m-0"><i class="bi bi-translate me-2" aria-hidden="true"></i>Languages</h1>
-  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/songs">Browse songs</a>
+  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/songs"><i class="bi bi-music-note-list me-1" aria-hidden="true"></i>Browse songs</a>
 </div>
 
-<div class="card shadow-sm">
-  <div class="table-responsive">
-    <table class="table table-striped mb-0 align-middle">
-      <thead>
-        <tr>
-          <th>Language</th>
-          <th class="text-end">Songs</th>
-          <th class="text-end">Plays</th>
-        </tr>
-      </thead>
-      <tbody>
-      <?php foreach ($languages as $l): ?>
-        <?php $flag = language_flag_url((string)($l['language'] ?? '')); ?>
-        <tr>
-          <td>
-            <a href="<?= e(APP_BASE) ?>/?r=/songs&language=<?= urlencode((string)$l['language']) ?>" class="text-decoration-none d-inline-flex align-items-center gap-2">
-              <?php if ($flag): ?>
-                <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)$l['language']) ?>" title="<?= e((string)$l['language']) ?>">
-              <?php endif; ?>
-              <span><?= e((string)$l['language']) ?></span>
-            </a>
-          </td>
-          <td class="text-end"><?= (int)$l['song_count'] ?></td>
-          <td class="text-end"><?= (int)$l['play_count'] ?></td>
-        </tr>
-      <?php endforeach; ?>
-      </tbody>
-    </table>
+<?php if (!$languages): ?>
+  <div class="alert alert-info">No languages yet.</div>
+<?php else: ?>
+  <div class="row g-3">
+    <?php foreach ($languages as $l): ?>
+      <?php
+        $lang = (string)($l['language'] ?? '');
+        $flag = language_flag_url($lang);
+      ?>
+      <div class="col-6 col-md-4 col-lg-3">
+        <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/songs&language=<?= urlencode($lang) ?>">
+          <div class="ratio ratio-1x1 bg-dark overflow-hidden d-flex align-items-center justify-content-center">
+            <?php if ($flag): ?>
+              <img class="lang-flag lang-flag-lg lang-flag-circle" src="<?= e($flag) ?>" alt="<?= e($lang) ?>" title="<?= e($lang) ?>">
+            <?php else: ?>
+              <div class="w-100 h-100 d-flex align-items-center justify-content-center text-white-50">
+                <i class="bi bi-question-circle fs-1" aria-hidden="true"></i>
+              </div>
+            <?php endif; ?>
+          </div>
+          <div class="card-body">
+            <div class="fw-semibold text-dark text-truncate"><?= e($lang) ?></div>
+            <div class="text-muted small"><?= (int)($l['song_count'] ?? 0) ?> songs · <?= (int)($l['play_count'] ?? 0) ?> plays</div>
+          </div>
+        </a>
+      </div>
+    <?php endforeach; ?>
   </div>
-</div>
+<?php endif; ?>

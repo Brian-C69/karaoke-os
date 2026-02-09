@@ -110,7 +110,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
             </div>
             <div class="d-flex align-items-center gap-2 text-muted small text-nowrap">
               <?php if ($flag): ?>
-                <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
+                <img class="lang-flag lang-flag-xs lang-flag-circle" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
               <?php endif; ?>
               <span><?= (int)$s['play_count'] ?> plays</span>
             </div>
@@ -123,24 +123,24 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
           <?php $flag = language_flag_url((string)($s['language'] ?? '')); ?>
           <div class="col-6 col-md-4 col-lg-3">
             <a class="card song-card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/song&id=<?= (int)$s['id'] ?>">
-              <div class="cover">
+              <div class="cover position-relative">
                 <?php if (!empty($s['cover_url'])): ?>
                   <img src="<?= e((string)$s['cover_url']) ?>" alt="">
                 <?php else: ?>
                   <div class="placeholder"><i class="bi bi-image me-1" aria-hidden="true"></i>No cover</div>
                 <?php endif; ?>
+                <?php if ($flag): ?>
+                  <div class="position-absolute bottom-0 end-0 m-2">
+                    <span class="bg-dark bg-opacity-75 rounded-pill p-1 d-inline-flex">
+                      <img class="lang-flag lang-flag-xs lang-flag-circle" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
+                    </span>
+                  </div>
+                <?php endif; ?>
               </div>
               <div class="card-body">
                 <div class="fw-semibold text-dark text-truncate"><?= e((string)$s['title']) ?></div>
                 <div class="text-muted small text-truncate"><?= e((string)$s['artist']) ?></div>
-                <div class="d-flex align-items-center justify-content-between text-muted small">
-                  <div>
-                    <?php if ($flag): ?>
-                      <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)($s['language'] ?? '')) ?>" title="<?= e((string)($s['language'] ?? '')) ?>">
-                    <?php endif; ?>
-                  </div>
-                  <div><?= (int)$s['play_count'] ?> plays</div>
-                </div>
+                <div class="text-muted small"><?= (int)$s['play_count'] ?> plays</div>
               </div>
             </a>
           </div>

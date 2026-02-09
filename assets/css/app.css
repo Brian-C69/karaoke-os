@@ -7,3 +7,6 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-seri
 .stat .card-body { padding: 1rem; }
 .lang-flag { width: 20px; height: 20px; display: inline-block; border-radius: .25rem; vertical-align: -0.2em; }
 .lang-flag-sm { width: 16px; height: 16px; }
+.lang-flag-xs { width: 14px; height: 14px; }
+.lang-flag-circle { border-radius: 999px; }
+.lang-flag-lg { width: 56px; height: 56px; }

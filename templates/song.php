@@ -47,7 +47,7 @@
             <span class="text-muted">Language:</span>
             <?php $flag = language_flag_url((string)($song['language'] ?? '')); ?>
             <?php if ($flag): ?>
-              <img class="lang-flag lang-flag-sm" src="<?= e($flag) ?>" alt="<?= e((string)($song['language'] ?? '')) ?>" title="<?= e((string)($song['language'] ?? '')) ?>">
+              <img class="lang-flag lang-flag-xs lang-flag-circle" src="<?= e($flag) ?>" alt="<?= e((string)($song['language'] ?? '')) ?>" title="<?= e((string)($song['language'] ?? '')) ?>">
             <?php else: ?>
               <?= e((string)($song['language'] ?? '')) ?: '—' ?>
             <?php endif; ?>
