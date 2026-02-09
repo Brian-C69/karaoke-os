@@ -43,7 +43,6 @@
               <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/admin"><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Admin</a></li>
             <?php endif; ?>
             <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/account"><i class="bi bi-person-circle me-1" aria-hidden="true"></i>Account</a></li>
-            <li class="nav-item"><span class="navbar-text me-2">Hi, <?= e((string)$user['username']) ?></span></li>
             <li class="nav-item">
               <form method="post" action="<?= e(APP_BASE) ?>/?r=/logout" class="d-inline">
                 <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
