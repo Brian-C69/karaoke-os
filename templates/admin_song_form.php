@@ -44,7 +44,9 @@ $backHref = e(APP_BASE) . '/?' . http_build_query($backParams);
             <div class="fw-semibold">Auto metadata</div>
             <div class="d-flex align-items-center gap-2">
               <span class="badge text-bg-secondary" id="metaBadge">Meta: idle</span>
-              <button type="button" class="btn btn-sm btn-outline-secondary" id="pickCoverBtn"><i class="bi bi-images me-1" aria-hidden="true"></i>Pick cover</button>
+              <?php if ($song): ?>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="pickCoverBtn"><i class="bi bi-images me-1" aria-hidden="true"></i>Pick cover</button>
+              <?php endif; ?>
             </div>
           </div>
           <div class="row g-3 mt-1">
@@ -66,10 +68,14 @@ $backHref = e(APP_BASE) . '/?' . http_build_query($backParams);
                   <label class="form-label">Album (auto)</label>
                   <input class="form-control" name="album" value="<?= e((string)($song['album'] ?? '')) ?>" placeholder="Auto-filled when possible">
                 </div>
-                <div class="col-12">
-                  <label class="form-label">Cover URL (auto)</label>
-                  <input class="form-control" name="cover_url" value="<?= e((string)($song['cover_url'] ?? '')) ?>" placeholder="Auto-filled when possible">
-                </div>
+                <?php if ($song): ?>
+                  <div class="col-12">
+                    <label class="form-label">Cover URL (auto)</label>
+                    <input class="form-control" name="cover_url" value="<?= e((string)($song['cover_url'] ?? '')) ?>" placeholder="Auto-filled when possible">
+                  </div>
+                <?php else: ?>
+                  <input type="hidden" name="cover_url" value="<?= e((string)($song['cover_url'] ?? '')) ?>">
+                <?php endif; ?>
               </div>
             </div>
           </div>
