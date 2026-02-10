@@ -80,6 +80,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="<?= e(APP_BASE) ?>/assets/js/song-actions.js"></script>
+  <script src="<?= e(APP_BASE) ?>/assets/js/no-right-click.js"></script>
   <footer class="border-top py-3">
     <div class="container small text-muted d-flex align-items-center justify-content-between">
       <div>Karaoke OS</div>
