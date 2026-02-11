@@ -8,10 +8,26 @@
   $currentRoute = $_GET['r'] ?? '/';
   if (!is_string($currentRoute)) $currentRoute = '/';
   $currentRoute = '/' . ltrim($currentRoute, '/');
-  $isHome = $currentRoute === '/';
-  $isSongs = $currentRoute === '/songs';
-  $isArtists = $currentRoute === '/artists';
-  $isAccount = $currentRoute === '/account';
+  $isAdmin = substr($currentRoute, 0, 6) === '/admin';
+
+  $activeHome = $currentRoute === '/';
+  $activeSongs = $currentRoute === '/songs' || $currentRoute === '/song';
+  $activeArtists = $currentRoute === '/artists' || $currentRoute === '/artist';
+  $activeLanguages = $currentRoute === '/languages';
+  $activeTop = $currentRoute === '/top';
+  $activeLiked = $currentRoute === '/liked';
+  $activeRecent = $currentRoute === '/recent';
+  $activeFavorites = $currentRoute === '/favorites';
+  $activePlaylists = $currentRoute === '/playlists' || $currentRoute === '/playlist';
+  $activeUsage = $currentRoute === '/usage';
+  $activeAccount = $currentRoute === '/account';
+  $activeAdmin = $isAdmin;
+  $activeLogin = $currentRoute === '/login';
+
+  $mobileHome = $activeHome || $activeTop || $activeLanguages || $activeLiked;
+  $mobileSongs = $activeSongs;
+  $mobileArtists = $activeArtists;
+  $mobileProfile = $activeAccount || $activeLogin || $activeUsage || $activeFavorites || $activePlaylists || $activeRecent || $activeAdmin;
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -43,13 +59,37 @@
       </button>
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav me-auto">
-          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/songs"><i class="bi bi-music-note-list me-1" aria-hidden="true"></i>Songs</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/artists"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Artists</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/languages"><i class="bi bi-translate me-1" aria-hidden="true"></i>Languages</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/top"><i class="bi bi-trophy me-1" aria-hidden="true"></i>Top 100</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/liked"><i class="bi bi-heart me-1" aria-hidden="true"></i>Most liked</a></li>
+          <li class="nav-item">
+            <a class="nav-link<?= $activeSongs ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/songs"<?= $activeSongs ? ' aria-current="page"' : '' ?>>
+              <i class="bi bi-music-note-list me-1" aria-hidden="true"></i>Songs
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link<?= $activeArtists ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/artists"<?= $activeArtists ? ' aria-current="page"' : '' ?>>
+              <i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Artists
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link<?= $activeLanguages ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/languages"<?= $activeLanguages ? ' aria-current="page"' : '' ?>>
+              <i class="bi bi-translate me-1" aria-hidden="true"></i>Languages
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link<?= $activeTop ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/top"<?= $activeTop ? ' aria-current="page"' : '' ?>>
+              <i class="bi bi-trophy me-1" aria-hidden="true"></i>Top 100
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link<?= $activeLiked ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/liked"<?= $activeLiked ? ' aria-current="page"' : '' ?>>
+              <i class="bi bi-heart me-1" aria-hidden="true"></i>Most liked
+            </a>
+          </li>
           <?php if ($user): ?>
-            <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/recent"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Recent</a></li>
+            <li class="nav-item">
+              <a class="nav-link<?= $activeRecent ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/recent"<?= $activeRecent ? ' aria-current="page"' : '' ?>>
+                <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Recent
+              </a>
+            </li>
           <?php endif; ?>
         </ul>
         <ul class="navbar-nav">
@@ -59,12 +99,28 @@
             </button>
           </li>
           <?php if ($user): ?>
-            <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/favorites"><i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i>Favorites</a></li>
-            <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/playlists"><i class="bi bi-collection-play me-1" aria-hidden="true"></i>Playlists</a></li>
+            <li class="nav-item">
+              <a class="nav-link<?= $activeFavorites ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/favorites"<?= $activeFavorites ? ' aria-current="page"' : '' ?>>
+                <i class="bi bi-heart-fill me-1 text-danger" aria-hidden="true"></i>Favorites
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link<?= $activePlaylists ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/playlists"<?= $activePlaylists ? ' aria-current="page"' : '' ?>>
+                <i class="bi bi-collection-play me-1" aria-hidden="true"></i>Playlists
+              </a>
+            </li>
             <?php if (($user['role'] ?? '') === 'admin'): ?>
-              <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/admin"><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Admin</a></li>
+              <li class="nav-item">
+                <a class="nav-link<?= $activeAdmin ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/admin"<?= $activeAdmin ? ' aria-current="page"' : '' ?>>
+                  <i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Admin
+                </a>
+              </li>
             <?php endif; ?>
-            <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/account"><i class="bi bi-person-circle me-1" aria-hidden="true"></i>Account</a></li>
+            <li class="nav-item">
+              <a class="nav-link<?= ($activeAccount || $activeUsage) ? ' active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/account"<?= ($activeAccount || $activeUsage) ? ' aria-current="page"' : '' ?>>
+                <i class="bi bi-person-circle me-1" aria-hidden="true"></i>Account
+              </a>
+            </li>
             <li class="nav-item d-flex align-items-center">
               <form method="post" action="<?= e(APP_BASE) ?>/?r=/logout" class="m-0">
                 <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
@@ -94,19 +150,19 @@
   <nav class="mobile-bottom-nav d-lg-none fixed-bottom border-top bg-body">
     <div class="container">
       <div class="nav nav-pills nav-fill py-2">
-        <a class="nav-link <?= $isHome ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/">
+        <a class="nav-link <?= $mobileHome ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/">
           <div><i class="bi bi-house" aria-hidden="true"></i></div>
           <div class="small">Home</div>
         </a>
-        <a class="nav-link <?= $isSongs ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/songs">
+        <a class="nav-link <?= $mobileSongs ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/songs">
           <div><i class="bi bi-music-note-list" aria-hidden="true"></i></div>
           <div class="small">Songs</div>
         </a>
-        <a class="nav-link <?= $isArtists ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/artists">
+        <a class="nav-link <?= $mobileArtists ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/artists">
           <div><i class="bi bi-person-lines-fill" aria-hidden="true"></i></div>
           <div class="small">Artists</div>
         </a>
-        <a class="nav-link <?= $isAccount ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=<?= $user ? '/account' : '/login' ?>">
+        <a class="nav-link <?= $mobileProfile ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=<?= $user ? '/account' : '/login' ?>">
           <div><i class="bi bi-person-circle" aria-hidden="true"></i></div>
           <div class="small">Profile</div>
         </a>
