@@ -83,9 +83,7 @@ for ($i = 0; $i < 7; $i++) {
         </div>
       </div>
       <div class="col-12">
-        <div class="text-muted small">Counts include all plays by this user (not song-specific).</div>
       </div>
     </div>
   </div>
 </div>
-

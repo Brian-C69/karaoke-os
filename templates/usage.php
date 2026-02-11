@@ -80,10 +80,6 @@ for ($i = 0; $i < 7; $i++) {
           </div>
         </div>
       </div>
-      <div class="col-12">
-        <div class="text-muted small">Counts include all your plays (not song-specific).</div>
-      </div>
     </div>
   </div>
 </div>
-
