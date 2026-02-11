@@ -153,6 +153,7 @@
   <script src="<?= e(APP_BASE) ?>/assets/js/song-actions.js"></script>
   <script src="<?= e(APP_BASE) ?>/assets/js/no-right-click.js"></script>
   <script src="<?= e(APP_BASE) ?>/assets/js/pwa.js"></script>
+  <script src="<?= e(APP_BASE) ?>/assets/js/flash.js"></script>
 
   <nav class="mobile-bottom-nav d-lg-none fixed-bottom border-top bg-body">
     <div class="container">

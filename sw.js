@@ -12,6 +12,7 @@ const PRECACHE_URLS = [
   './assets/js/songs-search.js',
   './assets/js/artists-search.js',
   './assets/js/admin-bulk.js',
+  './assets/js/flash.js',
   './assets/js/no-right-click.js',
   './assets/img/karaoke_os_icon.png',
   './assets/img/pwa-192.png',
