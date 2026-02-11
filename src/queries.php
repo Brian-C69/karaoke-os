@@ -1384,6 +1384,77 @@ function admin_set_user_revoked(PDO $db, int $id, bool $revoked): void
     $stmt->execute([':id' => (int)$id, ':r' => $revoked ? 1 : 0]);
 }
 
+function admin_set_users_revoked(PDO $db, array $ids, bool $revoked, int $skipUserId = 0): int
+{
+    $ids = array_values(array_unique(array_map('intval', $ids)));
+    $ids = array_values(array_filter($ids, static fn (int $v): bool => $v > 0));
+    if ($skipUserId > 0) {
+        $ids = array_values(array_filter($ids, static fn (int $v): bool => $v !== $skipUserId));
+    }
+    if (!$ids) {
+        return 0;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $db->prepare('UPDATE users SET is_revoked = ? WHERE id IN (' . $placeholders . ')');
+    $stmt->execute(array_merge([$revoked ? 1 : 0], $ids));
+    return (int)$stmt->rowCount();
+}
+
+function admin_set_users_paid(PDO $db, array $ids, bool $paid): int
+{
+    $ids = array_values(array_unique(array_map('intval', $ids)));
+    $ids = array_values(array_filter($ids, static fn (int $v): bool => $v > 0));
+    if (!$ids) {
+        return 0;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $db->prepare('UPDATE users SET is_paid = ? WHERE id IN (' . $placeholders . ')');
+    $stmt->execute(array_merge([$paid ? 1 : 0], $ids));
+    return (int)$stmt->rowCount();
+}
+
+function admin_set_users_email_verified(PDO $db, array $ids, bool $verified): int
+{
+    $ids = array_values(array_unique(array_map('intval', $ids)));
+    $ids = array_values(array_filter($ids, static fn (int $v): bool => $v > 0));
+    if (!$ids) {
+        return 0;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    if ($verified) {
+        $stmt = $db->prepare(
+            "UPDATE users
+             SET email_verified_at = ?
+             WHERE id IN (" . $placeholders . ")
+               AND email IS NOT NULL
+               AND TRIM(email) <> ''"
+        );
+        $stmt->execute(array_merge([now_db()], $ids));
+        return (int)$stmt->rowCount();
+    }
+
+    $stmt = $db->prepare("UPDATE users SET email_verified_at = NULL WHERE id IN (" . $placeholders . ")");
+    $stmt->execute($ids);
+    return (int)$stmt->rowCount();
+}
+
+function admin_set_users_paid_until(PDO $db, array $ids, ?string $paidUntil): int
+{
+    $ids = array_values(array_unique(array_map('intval', $ids)));
+    $ids = array_values(array_filter($ids, static fn (int $v): bool => $v > 0));
+    if (!$ids) {
+        return 0;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $db->prepare('UPDATE users SET paid_until = ? WHERE id IN (' . $placeholders . ')');
+    $stmt->execute(array_merge([$paidUntil !== null && trim($paidUntil) !== '' ? trim($paidUntil) : null], $ids));
+    return (int)$stmt->rowCount();
+}
+
 function admin_create_user(PDO $db, string $username, string $password, string $role, ?string $email, int $isPaid, ?string $paidUntil): void
 {
     $username = trim($username);

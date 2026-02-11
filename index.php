@@ -1456,6 +1456,148 @@ switch ($route) {
 
     case '/admin/users':
         require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_verify();
+            $action = (string)($_POST['action'] ?? '');
+
+            if ($action === 'bulk_update') {
+                $bulk = strtolower(trim((string)($_POST['bulk_action'] ?? '')));
+                $ids = $_POST['user_ids'] ?? [];
+                if (!is_array($ids)) $ids = [];
+                $userIds = [];
+                foreach ($ids as $v) {
+                    $id = (int)$v;
+                    if ($id > 0) $userIds[$id] = true;
+                }
+                $userIds = array_keys($userIds);
+                if (!$userIds) {
+                    flash('info', 'No users selected.');
+                    redirect('/?r=/admin/users');
+                }
+
+                $updated = 0;
+                $skipped = 0;
+                $selfId = (int)(current_user()['id'] ?? 0);
+
+                try {
+                    if ($bulk === 'revoke') {
+                        if ($selfId > 0 && in_array($selfId, $userIds, true)) {
+                            $skipped++;
+                        }
+                        $updated = admin_set_users_revoked($db, $userIds, true, $selfId);
+                    } elseif ($bulk === 'restore') {
+                        $updated = admin_set_users_revoked($db, $userIds, false);
+                    } elseif ($bulk === 'set_paid') {
+                        $updated = admin_set_users_paid($db, $userIds, true);
+                    } elseif ($bulk === 'unset_paid') {
+                        $updated = admin_set_users_paid($db, $userIds, false);
+                    } elseif ($bulk === 'mark_verified') {
+                        $updated = admin_set_users_email_verified($db, $userIds, true);
+                    } elseif ($bulk === 'clear_verified') {
+                        $updated = admin_set_users_email_verified($db, $userIds, false);
+                    } elseif ($bulk === 'set_paid_until') {
+                        $paidUntil = trim((string)($_POST['paid_until'] ?? ''));
+                        if ($paidUntil !== '' && !preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $paidUntil)) {
+                            flash('danger', 'Paid until must be YYYY-MM-DD.');
+                            redirect('/?r=/admin/users');
+                        }
+                        $updated = admin_set_users_paid_until($db, $userIds, $paidUntil !== '' ? $paidUntil : null);
+                    } elseif ($bulk === 'clear_paid_until') {
+                        $updated = admin_set_users_paid_until($db, $userIds, null);
+                    } else {
+                        flash('danger', 'Invalid bulk action.');
+                        redirect('/?r=/admin/users');
+                    }
+                } catch (Throwable $e) {
+                    flash('danger', 'Bulk update failed.');
+                    redirect('/?r=/admin/users');
+                }
+
+                $msg = sprintf('Bulk update complete: %d user(s) updated.', $updated);
+                if ($skipped > 0) {
+                    $msg .= sprintf(' %d skipped.', $skipped);
+                }
+                flash('success', $msg);
+                redirect('/?r=/admin/users');
+            }
+
+            if ($action === 'bulk_insert') {
+                $raw = (string)($_POST['bulk_lines'] ?? '');
+                $lines = preg_split("/\\r\\n|\\n|\\r/", $raw);
+                $inserted = 0;
+                $skipped = 0;
+                $errors = [];
+
+                foreach ($lines as $idx => $line) {
+                    $lineNum = $idx + 1;
+                    $line = trim((string)$line);
+                    if ($line === '' || str_starts_with($line, '#')) {
+                        continue;
+                    }
+
+                    $parts = preg_split('/\\s*\\|\\s*|\\t+/', $line);
+                    $parts = array_map('trim', is_array($parts) ? $parts : []);
+                    $parts = array_values(array_filter($parts, static fn ($p) => $p !== ''));
+
+                    $username = $parts[0] ?? '';
+                    $password = $parts[1] ?? '';
+                    $role = strtolower($parts[2] ?? 'user');
+                    $email = $parts[3] ?? '';
+                    $paid = $parts[4] ?? '';
+                    $paidUntil = $parts[5] ?? '';
+
+                    if ($username === '' || $password === '') {
+                        $errors[] = "Line {$lineNum}: missing fields (Username | Password).";
+                        continue;
+                    }
+                    if (strlen($password) < 6) {
+                        $errors[] = "Line {$lineNum}: password must be at least 6 characters.";
+                        continue;
+                    }
+                    $role = $role === 'admin' ? 'admin' : 'user';
+
+                    $email = trim((string)$email);
+                    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        $errors[] = "Line {$lineNum}: invalid email.";
+                        continue;
+                    }
+
+                    $isPaid = in_array(strtolower(trim((string)$paid)), ['1', 'y', 'yes', 'true'], true) ? 1 : 0;
+                    $paidUntil = trim((string)$paidUntil);
+                    if ($paidUntil !== '' && !preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $paidUntil)) {
+                        $errors[] = "Line {$lineNum}: paid_until must be YYYY-MM-DD.";
+                        continue;
+                    }
+
+                    try {
+                        $stmt = $db->prepare('INSERT INTO users (username, email, password_hash, role, is_paid, paid_until, created_at) VALUES (:u, :e, :p, :r, :ip, :pu, :t)');
+                        $stmt->execute([
+                            ':u' => $username,
+                            ':e' => $email !== '' ? $email : null,
+                            ':p' => password_hash($password, PASSWORD_DEFAULT),
+                            ':r' => $role,
+                            ':ip' => $isPaid,
+                            ':pu' => $paidUntil !== '' ? $paidUntil : null,
+                            ':t' => now_db(),
+                        ]);
+                        $inserted++;
+                    } catch (Throwable $e) {
+                        $skipped++;
+                    }
+                }
+
+                flash('success', sprintf('Bulk insert: %d added, %d skipped.', $inserted, $skipped));
+                if ($errors) {
+                    $msg = 'Bulk insert errors: ' . implode(' ; ', array_slice($errors, 0, 6));
+                    if (count($errors) > 6) $msg .= ' ; (+' . (count($errors) - 6) . ' more)';
+                    flash('danger', $msg);
+                }
+                redirect('/?r=/admin/users');
+            }
+
+            flash('danger', 'Unknown action.');
+            redirect('/?r=/admin/users');
+        }
         $pageTitle = 'Admin · Users';
         render('admin_users', [
             'users' => admin_list_users($db),
