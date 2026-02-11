@@ -911,6 +911,29 @@ switch ($route) {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             csrf_verify();
+            $action = (string)($_POST['action'] ?? '');
+            if ($action === 'cache_external_image') {
+                $remote = trim((string)($artist['image_url'] ?? ''));
+                if ($remote === '' || !is_safe_external_url($remote)) {
+                    flash('info', 'No external Image URL to cache.');
+                    redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+                }
+
+                try {
+                    $cached = cache_artist_image_url((int)$artist['id'], (string)($artist['name'] ?? ''), $remote);
+                    if ($cached) {
+                        $stmt = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                        $stmt->execute([':img' => $cached, ':u' => now_db(), ':id' => (int)$artist['id']]);
+                        flash('success', 'Artist image cached locally.');
+                    } else {
+                        flash('danger', 'Could not cache artist image.');
+                    }
+                } catch (Throwable $e) {
+                    flash('danger', 'Could not cache artist image.');
+                }
+
+                redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+            }
 
             $remove = !empty($_POST['remove_image']);
             $imageUrl = trim((string)($_POST['image_url'] ?? ''));
