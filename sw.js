@@ -1,6 +1,6 @@
 /* Karaoke OS service worker (minimal). */
 
-const CACHE_NAME = 'karaoke-os-static-v1';
+const CACHE_NAME = 'karaoke-os-static-v2';
 
 const PRECACHE_URLS = [
   './?r=/',
@@ -54,15 +54,23 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          if (res && res.ok) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, res.clone())).catch(() => {});
-          }
-          return res;
-        })
-        .catch(() => cached);
+      const fetchAndUpdate = () =>
+        fetch(req)
+          .then((res) => {
+            if (res && res.ok) {
+              caches.open(CACHE_NAME).then((cache) => cache.put(req, res.clone())).catch(() => {});
+            }
+            return res;
+          })
+          .catch(() => null);
+
+      if (cached) {
+        // Stale-while-revalidate so assets update even when the SW doesn't.
+        event.waitUntil(fetchAndUpdate());
+        return cached;
+      }
+
+      return fetchAndUpdate().then((res) => res || cached);
     })
   );
 });
