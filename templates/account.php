@@ -93,47 +93,36 @@
         <div class="fw-semibold"><?= e((string)$userFull['username']) ?></div>
       </div>
       <div class="col-md-6">
-        <div class="text-muted small">Role</div>
-        <div class="fw-semibold"><?= e((string)$userFull['role']) ?></div>
+        <div class="text-muted small">Email</div>
+        <div class="fw-semibold"><?= e((string)($userFull['email'] ?? '—')) ?></div>
       </div>
-      <div class="col-md-8">
-        <label class="form-label">Email</label>
-        <div class="form-control bg-body"><?= e((string)($userFull['email'] ?? '—')) ?></div>
-        <div class="text-muted small mt-2">
-          Status:
+
+      <div class="col-12">
+        <div class="text-muted small mb-1">Status</div>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
           <?php if (!empty($userFull['email_verified_at'])): ?>
             <span class="badge text-bg-success"><i class="bi bi-patch-check-fill me-1" aria-hidden="true"></i>Verified</span>
           <?php else: ?>
             <span class="badge text-bg-warning"><i class="bi bi-patch-exclamation-fill me-1" aria-hidden="true"></i>Not verified</span>
           <?php endif; ?>
+
+          <?php if ((int)($userFull['is_paid'] ?? 0) === 1): ?>
+            <span class="badge text-bg-success"><i class="bi bi-credit-card-2-front-fill me-1" aria-hidden="true"></i>Paid</span>
+          <?php else: ?>
+            <span class="badge text-bg-secondary"><i class="bi bi-credit-card-2-front me-1" aria-hidden="true"></i>Not paid</span>
+          <?php endif; ?>
         </div>
       </div>
-      <div class="col-md-4">
-        <form method="post" action="<?= e(APP_BASE) ?>/?r=/account/send-verification">
-          <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-          <button class="btn btn-primary w-100" <?= !empty($userFull['email_verified_at']) ? 'disabled' : '' ?>><i class="bi bi-send me-1" aria-hidden="true"></i>Send verification email</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="card shadow-sm">
-  <div class="card-body">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-      <div>
-        <div class="text-muted small">Paid access</div>
-        <?php if ((int)($userFull['is_paid'] ?? 0) === 1): ?>
-          <div class="fw-semibold">Active</div>
-          <?php if (!empty($userFull['paid_until'])): ?>
-            <div class="text-muted small">Until: <?= e((string)$userFull['paid_until']) ?></div>
-          <?php endif; ?>
-        <?php else: ?>
-          <div class="fw-semibold">Not active</div>
-          <div class="text-muted small">Ask admin to activate your paid access.</div>
-        <?php endif; ?>
+      <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/usage"><i class="bi bi-activity me-1" aria-hidden="true"></i>Usage</a>
+          <form method="post" action="<?= e(APP_BASE) ?>/?r=/account/send-verification" class="m-0">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <button class="btn btn-primary" <?= !empty($userFull['email_verified_at']) ? 'disabled' : '' ?>><i class="bi bi-send me-1" aria-hidden="true"></i>Send verification email</button>
+          </form>
+        </div>
       </div>
-      <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/usage"><i class="bi bi-activity me-1" aria-hidden="true"></i>Usage</a>
     </div>
   </div>
 </div>
