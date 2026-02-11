@@ -6,6 +6,10 @@ Options -Indexes
   RewriteRule ^(?:src|templates|data|lib)/ - [F,L]
 </IfModule>
 
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
 # Block direct access to app internals.
 <FilesMatch "^(?:\\.env|\\.ini|composer\\.(?:json|lock)|package(?:-lock)?\\.json|yarn\\.lock)$">
   Require all denied
