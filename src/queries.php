@@ -1358,6 +1358,21 @@ function admin_set_song_active(PDO $db, int $id, bool $active): void
     ]);
 }
 
+function admin_set_songs_active(PDO $db, array $ids, bool $active): int
+{
+    $ids = array_values(array_unique(array_map('intval', $ids)));
+    $ids = array_values(array_filter($ids, static fn (int $v): bool => $v > 0));
+    if (!$ids) {
+        return 0;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $db->prepare('UPDATE songs SET is_active = ?, updated_at = ? WHERE id IN (' . $placeholders . ')');
+    $params = array_merge([$active ? 1 : 0, now_db()], $ids);
+    $stmt->execute($params);
+    return (int)$stmt->rowCount();
+}
+
 function admin_list_users(PDO $db): array
 {
     return $db->query('SELECT id, username, email, email_verified_at, is_paid, paid_until, is_revoked, role, created_at, last_login_at FROM users ORDER BY id ASC')->fetchAll();

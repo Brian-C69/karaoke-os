@@ -872,6 +872,126 @@ switch ($route) {
 
     case '/admin/songs':
         require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_verify();
+            $action = (string)($_POST['action'] ?? '');
+
+            if ($action === 'bulk_update') {
+                $bulk = strtolower(trim((string)($_POST['bulk_action'] ?? '')));
+                $ids = $_POST['song_ids'] ?? [];
+                if (!is_array($ids)) $ids = [];
+                $songIds = [];
+                foreach ($ids as $v) {
+                    $id = (int)$v;
+                    if ($id > 0) $songIds[$id] = true;
+                }
+                $songIds = array_keys($songIds);
+
+                if (!$songIds) {
+                    flash('info', 'No songs selected.');
+                    redirect('/?r=/admin/songs&view=' . urlencode((string)($_GET['view'] ?? 'active')));
+                }
+
+                if (!in_array($bulk, ['enable', 'disable'], true)) {
+                    flash('danger', 'Invalid bulk action.');
+                    redirect('/?r=/admin/songs&view=' . urlencode((string)($_GET['view'] ?? 'active')));
+                }
+
+                $count = 0;
+                try {
+                    $count = admin_set_songs_active($db, $songIds, $bulk === 'enable');
+                } catch (Throwable $e) {
+                    $count = 0;
+                }
+
+                flash('success', sprintf('Bulk update complete: %d song(s) updated.', $count));
+                redirect('/?r=/admin/songs&view=' . urlencode((string)($_GET['view'] ?? 'active')));
+            }
+
+            if ($action === 'bulk_insert') {
+                $raw = (string)($_POST['bulk_lines'] ?? '');
+                $lines = preg_split("/\\r\\n|\\n|\\r/", $raw);
+                $inserted = 0;
+                $skipped = 0;
+                $errors = [];
+
+                foreach ($lines as $idx => $line) {
+                    $lineNum = $idx + 1;
+                    $line = trim((string)$line);
+                    if ($line === '' || str_starts_with($line, '#')) {
+                        continue;
+                    }
+
+                    $parts = preg_split('/\\s*\\|\\s*|\\t+/', $line);
+                    $parts = array_map('trim', is_array($parts) ? $parts : []);
+                    $parts = array_values(array_filter($parts, static fn ($p) => $p !== ''));
+
+                    $title = $parts[0] ?? '';
+                    $artist = $parts[1] ?? '';
+                    $driveInput = $parts[2] ?? '';
+                    $language = $parts[3] ?? '';
+
+                    if ($title === '' || $artist === '' || $driveInput === '') {
+                        $errors[] = "Line {$lineNum}: missing fields (Title | Artist | Drive).";
+                        continue;
+                    }
+
+                    $fileId = drive_extract_file_id($driveInput);
+                    $driveUrl = is_safe_external_url($driveInput) ? $driveInput : ($fileId ? drive_view_url($fileId) : null);
+                    if (!$driveUrl || !is_safe_external_url($driveUrl)) {
+                        $errors[] = "Line {$lineNum}: invalid Drive URL/ID.";
+                        continue;
+                    }
+
+                    $dupes = find_song_duplicates($db, null, $title, $artist, $fileId, $driveUrl);
+                    if ($dupes) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $now = now_db();
+                    $artistRow = upsert_artist($db, $artist);
+                    $artistId = is_array($artistRow) ? (int)($artistRow['id'] ?? 0) : 0;
+                    if ($artistId <= 0) $artistId = 0;
+
+                    try {
+                        $stmt = $db->prepare(
+                            'INSERT INTO songs (title, artist, artist_id, language, drive_url, drive_file_id, is_active, created_at, updated_at)
+                             VALUES (:t, :a, :aid, :l, :d, :fid, 1, :c, :u)'
+                        );
+                        $stmt->execute([
+                            ':t' => $title,
+                            ':a' => $artist,
+                            ':aid' => $artistId > 0 ? $artistId : null,
+                            ':l' => $language !== '' ? $language : null,
+                            ':d' => $driveUrl,
+                            ':fid' => $fileId,
+                            ':c' => $now,
+                            ':u' => $now,
+                        ]);
+                        $inserted++;
+                    } catch (Throwable $e) {
+                        $errors[] = "Line {$lineNum}: insert failed.";
+                        continue;
+                    }
+                }
+
+                if ($inserted > 0) {
+                    flash('success', sprintf('Bulk insert: %d added, %d duplicate(s) skipped.', $inserted, $skipped));
+                } else {
+                    flash('info', sprintf('Bulk insert: %d added, %d duplicate(s) skipped.', $inserted, $skipped));
+                }
+                if ($errors) {
+                    $msg = 'Bulk insert errors: ' . implode(' ; ', array_slice($errors, 0, 6));
+                    if (count($errors) > 6) $msg .= ' ; (+' . (count($errors) - 6) . ' more)';
+                    flash('danger', $msg);
+                }
+                redirect('/?r=/admin/songs&view=' . urlencode((string)($_GET['view'] ?? 'active')));
+            }
+
+            flash('danger', 'Unknown action.');
+            redirect('/?r=/admin/songs&view=' . urlencode((string)($_GET['view'] ?? 'active')));
+        }
         $pageTitle = 'Admin · Songs';
         render('admin_songs', [
             'view' => (string)($_GET['view'] ?? 'active'),
@@ -899,6 +1019,103 @@ switch ($route) {
                 } else {
                     flash('danger', 'Cleanup failed.');
                 }
+            } elseif ($action === 'bulk_artist_images') {
+                $bulk = strtolower(trim((string)($_POST['bulk_action'] ?? '')));
+                $ids = $_POST['artist_ids'] ?? [];
+                if (!is_array($ids)) $ids = [];
+                $artistIds = [];
+                foreach ($ids as $v) {
+                    $id = (int)$v;
+                    if ($id > 0) $artistIds[$id] = true;
+                }
+                $artistIds = array_keys($artistIds);
+
+                if (!$artistIds) {
+                    flash('info', 'No artists selected.');
+                    redirect('/?r=/admin/artists');
+                }
+                if (!in_array($bulk, ['fetch', 'refresh'], true)) {
+                    flash('danger', 'Invalid bulk action.');
+                    redirect('/?r=/admin/artists');
+                }
+
+                $ok = 0;
+                $fail = 0;
+                $skip = 0;
+
+                $placeholders = implode(',', array_fill(0, count($artistIds), '?'));
+                $stmt = $db->prepare('SELECT id, name, image_url FROM artists WHERE id IN (' . $placeholders . ')');
+                $stmt->execute($artistIds);
+                $rows = $stmt->fetchAll();
+
+                foreach ($rows as $r) {
+                    $id = (int)($r['id'] ?? 0);
+                    $name = trim((string)($r['name'] ?? ''));
+                    $current = trim((string)($r['image_url'] ?? ''));
+                    if ($id <= 0 || $name === '') {
+                        $fail++;
+                        continue;
+                    }
+
+                    if ($bulk === 'fetch' && $current !== '') {
+                        $skip++;
+                        continue;
+                    }
+                    if ($bulk === 'refresh') {
+                        try {
+                            purge_cached_artist_image_files($id);
+                        } catch (Throwable $e) {
+                            // ignore
+                        }
+                    }
+
+                    $remote = null;
+                    $mbid = null;
+                    try {
+                        $meta = lookup_artist_image($name);
+                        if (is_array($meta)) {
+                            $remote = !empty($meta['image_url']) ? (string)$meta['image_url'] : null;
+                            $mbid = !empty($meta['musicbrainz_id']) ? (string)$meta['musicbrainz_id'] : null;
+                        }
+                    } catch (Throwable $e) {
+                        $remote = null;
+                    }
+
+                    $cached = null;
+                    if (is_string($remote) && $remote !== '' && is_safe_external_url($remote)) {
+                        try {
+                            $cached = cache_artist_image_url($id, $name, $remote);
+                        } catch (Throwable $e) {
+                            $cached = null;
+                        }
+                    }
+
+                    $didUpdate = false;
+                    try {
+                        if ($cached) {
+                            $u = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                            $u->execute([':img' => $cached, ':u' => now_db(), ':id' => $id]);
+                            $didUpdate = true;
+                        }
+                        if (is_string($mbid) && trim($mbid) !== '') {
+                            $u = $db->prepare(
+                                'UPDATE artists
+                                 SET musicbrainz_id = CASE WHEN musicbrainz_id IS NULL OR TRIM(musicbrainz_id) = \'\' THEN :mb ELSE musicbrainz_id END,
+                                     updated_at = :u
+                                 WHERE id = :id'
+                            );
+                            $u->execute([':mb' => $mbid, ':u' => now_db(), ':id' => $id]);
+                            $didUpdate = true;
+                        }
+                    } catch (Throwable $e) {
+                        $didUpdate = false;
+                    }
+
+                    if ($cached || $didUpdate) $ok++;
+                    else $fail++;
+                }
+
+                flash('success', sprintf('Bulk artist images: %d updated, %d skipped, %d failed.', $ok, $skip, $fail));
             }
             redirect('/?r=/admin/artists');
         }

@@ -44,11 +44,34 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
   </div>
 </div>
 
-<div class="card shadow-sm">
+<form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/artists" data-bulk-root>
+  <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+  <input type="hidden" name="action" value="bulk_artist_images">
+
+  <div class="card shadow-sm">
+    <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <div class="fw-semibold">Bulk action</div>
+        <select class="form-select form-select-sm" name="bulk_action" style="width: 230px;">
+          <option value="">Choose…</option>
+          <option value="fetch">Fetch image (missing only)</option>
+          <option value="refresh">Force refresh image</option>
+        </select>
+        <button class="btn btn-sm btn-secondary" type="submit" data-bulk-apply disabled onclick="return confirm('Apply bulk artist image action? This may call external services.');">
+          Apply (<span data-bulk-count>0</span>)
+        </button>
+      </div>
+      <div class="text-muted small">Select is before row # (as requested).</div>
+    </div>
+
   <div class="table-responsive">
     <table class="table table-striped mb-0 align-middle">
       <thead>
         <tr>
+          <th class="text-center" style="width:44px;">
+            <input class="form-check-input" type="checkbox" data-bulk-all aria-label="Select all artists">
+          </th>
+          <th class="text-end" style="width:60px;">#</th>
           <th>Artist</th>
           <th class="text-end">Songs</th>
           <th class="text-end">Plays</th>
@@ -56,13 +79,17 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
         </tr>
       </thead>
       <tbody>
-      <?php foreach ($artists as $a): ?>
+      <?php $n = 0; foreach ($artists as $a): $n++; ?>
         <?php
           $img = trim((string)($a['image_url'] ?? ''));
           $imgIsExternal = $img !== '' && is_safe_external_url($img);
           if ($img !== '' && !$imgIsExternal) $img = e(APP_BASE) . '/' . ltrim($img, '/');
         ?>
         <tr>
+          <td class="text-center">
+            <input class="form-check-input" type="checkbox" name="artist_ids[]" value="<?= (int)$a['id'] ?>" data-bulk-item aria-label="Select artist">
+          </td>
+          <td class="text-end text-muted"><?= (int)$n ?></td>
           <td>
             <div class="d-flex align-items-center gap-2">
               <div class="rounded bg-dark overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center text-white-50" style="width:36px;height:36px;">
@@ -89,6 +116,7 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
     </table>
   </div>
 </div>
+</form>
 
 <?php if ($pager->pages > 1): ?>
   <div class="d-flex justify-content-center mt-4">
@@ -109,3 +137,5 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
     </nav>
   </div>
 <?php endif; ?>
+
+<script src="<?= e(APP_BASE) ?>/assets/js/admin-bulk.js"></script>

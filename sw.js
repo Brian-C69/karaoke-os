@@ -11,6 +11,7 @@ const PRECACHE_URLS = [
   './assets/js/song-actions.js',
   './assets/js/songs-search.js',
   './assets/js/artists-search.js',
+  './assets/js/admin-bulk.js',
   './assets/js/no-right-click.js',
   './assets/img/karaoke_os_icon.png',
   './assets/img/pwa-192.png',
@@ -64,4 +65,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-
