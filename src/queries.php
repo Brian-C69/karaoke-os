@@ -85,7 +85,7 @@ function count_songs(PDO $db, array $filters): int
         }
     }
 
-    $sql = 'SELECT COUNT(*) FROM songs s' . $joins . 'WHERE ' . implode(' AND ', $where);
+    $sql = 'SELECT COUNT(*) FROM songs s ' . $joins . 'WHERE ' . implode(' AND ', $where);
     $stmt = $db->prepare($sql);
     foreach ($params as $k => $v) {
         $stmt->bindValue($k, $v, $k === ':aid' ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -288,7 +288,7 @@ function count_favorite_songs(PDO $db, int $userId, array $filters): int
         }
     }
 
-    $sql = 'SELECT COUNT(*) FROM favorites f INNER JOIN songs s ON s.id = f.song_id' . $joins . 'WHERE ' . implode(' AND ', $where);
+    $sql = 'SELECT COUNT(*) FROM favorites f INNER JOIN songs s ON s.id = f.song_id ' . $joins . 'WHERE ' . implode(' AND ', $where);
     $stmt = $db->prepare($sql);
     foreach ($params as $k => $v) {
         $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -470,7 +470,7 @@ function count_playlist_songs(PDO $db, int $userId, int $playlistId, array $filt
         $params[':q'] = '%' . $qRaw . '%';
     }
 
-    $sql = 'SELECT COUNT(*) FROM playlist_songs ps INNER JOIN songs s ON s.id = ps.song_id' . $joins . 'WHERE ' . implode(' AND ', $where);
+    $sql = 'SELECT COUNT(*) FROM playlist_songs ps INNER JOIN songs s ON s.id = ps.song_id ' . $joins . 'WHERE ' . implode(' AND ', $where);
     $stmt = $db->prepare($sql);
     foreach ($params as $k => $v) {
         $stmt->bindValue($k, $v, $k === ':p' ? PDO::PARAM_INT : PDO::PARAM_STR);
