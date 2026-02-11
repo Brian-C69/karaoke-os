@@ -27,17 +27,24 @@ if (!in_array($view, ['active', 'disabled', 'all'], true)) {
 </ul>
 
 <div class="card shadow-sm mb-3">
-  <div class="card-body">
-    <div class="fw-semibold mb-2"><i class="bi bi-upload me-1" aria-hidden="true"></i>Bulk insert (paste)</div>
-    <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/songs&view=<?= e($view) ?>" class="mb-0">
-      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="action" value="bulk_insert">
-      <textarea class="form-control font-monospace" name="bulk_lines" rows="6" placeholder="Title | Artist | Drive URL/ID | Language (optional)&#10;Bohemian Rhapsody | Queen | https://drive.google.com/file/d/.../view | EN"></textarea>
-      <div class="text-muted small mt-1">Separator: <code>|</code> or <code>TAB</code>. Lines starting with <code>#</code> are ignored. Duplicates are skipped.</div>
-      <div class="mt-2 d-flex gap-2">
-        <button class="btn btn-outline-primary btn-sm" type="submit"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Insert lines</button>
-      </div>
-    </form>
+  <div class="card-header bg-body d-flex align-items-center justify-content-between">
+    <div class="fw-semibold"><i class="bi bi-upload me-1" aria-hidden="true"></i>Bulk insert (paste)</div>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#bulkInsertSongs" aria-expanded="false" aria-controls="bulkInsertSongs">
+      <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>Expand
+    </button>
+  </div>
+  <div id="bulkInsertSongs" class="collapse">
+    <div class="card-body">
+      <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/songs&view=<?= e($view) ?>" class="mb-0">
+        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="action" value="bulk_insert">
+        <textarea class="form-control font-monospace" name="bulk_lines" rows="6" placeholder="Title | Artist | Drive URL/ID | Language (optional)&#10;Bohemian Rhapsody | Queen | https://drive.google.com/file/d/.../view | EN"></textarea>
+        <div class="text-muted small mt-1">Separator: <code>|</code> or <code>TAB</code>. Lines starting with <code>#</code> are ignored. Duplicates are skipped.</div>
+        <div class="mt-2 d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" type="submit"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Insert lines</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
