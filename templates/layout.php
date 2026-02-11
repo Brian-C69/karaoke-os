@@ -49,11 +49,111 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="<?= e(APP_BASE) ?>/assets/js/theme.js"></script>
+  <style>
+    #pwa-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0b0f14;
+      color: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+    #pwa-splash .pwa-splash-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .75rem;
+      text-align: center;
+      padding: 2rem;
+    }
+    #pwa-splash img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.35));
+    }
+    #pwa-splash .pwa-splash-title {
+      font-weight: 800;
+      letter-spacing: .2px;
+      font-size: 1.25rem;
+      line-height: 1.1;
+    }
+    #pwa-splash .pwa-splash-sub {
+      opacity: .7;
+      font-size: .9rem;
+    }
+    #pwa-splash.pwa-splash--show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #pwa-splash.pwa-splash--hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="<?= e(APP_BASE) ?>/assets/css/app.css" rel="stylesheet">
 </head>
 <body class="bg-body-tertiary" data-auth="<?= $user ? '1' : '0' ?>">
+  <div id="pwa-splash" aria-hidden="true">
+    <div class="pwa-splash-inner">
+      <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="">
+      <div class="pwa-splash-title">Karaoke OS</div>
+      <div class="pwa-splash-sub">Loading…</div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const el = document.getElementById('pwa-splash');
+      if (!el) return;
+
+      const isStandalone =
+        (typeof navigator !== 'undefined' && navigator.standalone === true) ||
+        (typeof window !== 'undefined' &&
+          window.matchMedia &&
+          window.matchMedia('(display-mode: standalone)').matches);
+
+      if (!isStandalone) {
+        el.remove();
+        return;
+      }
+
+      // Show only once per app session (prevents flashing on internal nav).
+      let alreadyShown = false;
+      try {
+        alreadyShown = sessionStorage.getItem('kos_splash_shown') === '1';
+        sessionStorage.setItem('kos_splash_shown', '1');
+      } catch {}
+      if (alreadyShown) {
+        el.remove();
+        return;
+      }
+
+      el.classList.add('pwa-splash--show');
+
+      const started = Date.now();
+      const minMs = 450;
+      const hide = () => {
+        const remaining = minMs - (Date.now() - started);
+        window.setTimeout(() => {
+          el.classList.add('pwa-splash--hide');
+          window.setTimeout(() => el.remove(), 240);
+        }, Math.max(0, remaining));
+      };
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        hide();
+      } else {
+        document.addEventListener('DOMContentLoaded', hide, { once: true });
+      }
+    })();
+  </script>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark d-none d-lg-flex">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="<?= e(APP_BASE) ?>/?r=/">
