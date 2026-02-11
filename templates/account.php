@@ -33,7 +33,11 @@
       <span><i class="bi bi-clock-history me-2" aria-hidden="true"></i>Recent</span>
       <i class="bi bi-chevron-right text-muted" aria-hidden="true"></i>
     </a>
+  </div>
+</div>
 
+<div class="card shadow-sm mb-3 d-lg-none">
+  <div class="list-group list-group-flush">
     <div class="list-group-item text-muted small py-2">My stuff</div>
     <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-3" href="<?= e(APP_BASE) ?>/?r=/favorites">
       <span><i class="bi bi-heart-fill me-2 text-danger" aria-hidden="true"></i>Favorites</span>
