@@ -59,6 +59,7 @@
           <td class="text-end text-nowrap">
             <div class="d-inline-flex flex-nowrap gap-1">
               <a class="btn btn-sm btn-outline-primary" href="<?= e(APP_BASE) ?>/?r=/admin/user-edit&id=<?= (int)$u['id'] ?>"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit</a>
+              <a class="btn btn-sm btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/admin/user-usage&id=<?= (int)$u['id'] ?>"><i class="bi bi-activity me-1" aria-hidden="true"></i>Usage</a>
               <?php if ($revoked): ?>
                 <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/user-restore" class="m-0">
                   <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">

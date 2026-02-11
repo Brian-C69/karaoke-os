@@ -55,12 +55,44 @@ switch ($route) {
     case '/account':
         require_login();
         $pageTitle = 'Account';
-        $uid = (int)(current_user()['id'] ?? 0);
         render('account', [
             'userFull' => current_user_full($db),
-            'usageDay' => user_plays_by_day($db, $uid, 14),
-            'usageWeek' => user_plays_by_week($db, $uid, 12),
-            'usageMonth' => user_plays_by_month($db, $uid, 12),
+        ]);
+        break;
+
+    case '/usage':
+        require_login();
+        $pageTitle = 'Usage';
+        $uid = (int)(current_user()['id'] ?? 0);
+
+        $now = new DateTimeImmutable('now');
+        $weekStart = $now->modify('monday this week')->setTime(0, 0, 0);
+        $weekEnd = $weekStart->modify('+7 days');
+
+        $monthStart = $now->modify('first day of this month')->setTime(0, 0, 0);
+        $nextMonthStart = $monthStart->modify('+1 month');
+        $lastMonthStart = $monthStart->modify('-1 month');
+
+        $weekStartStr = $weekStart->format('Y-m-d H:i:s');
+        $weekEndStr = $weekEnd->format('Y-m-d H:i:s');
+        $monthStartStr = $monthStart->format('Y-m-d H:i:s');
+        $nextMonthStartStr = $nextMonthStart->format('Y-m-d H:i:s');
+        $lastMonthStartStr = $lastMonthStart->format('Y-m-d H:i:s');
+
+        $weekByDay = user_plays_by_day_between($db, $uid, $weekStartStr, $weekEndStr);
+        $weekTotal = user_play_count_between($db, $uid, $weekStartStr, $weekEndStr);
+        $thisMonthTotal = user_play_count_between($db, $uid, $monthStartStr, $nextMonthStartStr);
+        $lastMonthTotal = user_play_count_between($db, $uid, $lastMonthStartStr, $monthStartStr);
+
+        render('usage', [
+            'userFull' => current_user_full($db),
+            'weekStart' => $weekStart,
+            'weekByDay' => $weekByDay,
+            'weekTotal' => $weekTotal,
+            'thisMonthStart' => $monthStart,
+            'thisMonthTotal' => $thisMonthTotal,
+            'lastMonthStart' => $lastMonthStart,
+            'lastMonthTotal' => $lastMonthTotal,
         ]);
         break;
 
@@ -1029,11 +1061,47 @@ switch ($route) {
             redirect('/?r=/admin/users');
         }
         $pageTitle = 'Admin · Edit User';
-        render('admin_user_edit_form', [
+        render('admin_user_edit_form', ['target' => $target]);
+        break;
+
+    case '/admin/user-usage':
+        require_admin();
+        $userId = (int)($_GET['id'] ?? 0);
+        $target = get_user($db, $userId);
+        if (!$target) {
+            flash('danger', 'User not found.');
+            redirect('/?r=/admin/users');
+        }
+
+        $now = new DateTimeImmutable('now');
+        $weekStart = $now->modify('monday this week')->setTime(0, 0, 0);
+        $weekEnd = $weekStart->modify('+7 days');
+
+        $monthStart = $now->modify('first day of this month')->setTime(0, 0, 0);
+        $nextMonthStart = $monthStart->modify('+1 month');
+        $lastMonthStart = $monthStart->modify('-1 month');
+
+        $weekStartStr = $weekStart->format('Y-m-d H:i:s');
+        $weekEndStr = $weekEnd->format('Y-m-d H:i:s');
+        $monthStartStr = $monthStart->format('Y-m-d H:i:s');
+        $nextMonthStartStr = $nextMonthStart->format('Y-m-d H:i:s');
+        $lastMonthStartStr = $lastMonthStart->format('Y-m-d H:i:s');
+
+        $weekByDay = user_plays_by_day_between($db, $userId, $weekStartStr, $weekEndStr);
+        $weekTotal = user_play_count_between($db, $userId, $weekStartStr, $weekEndStr);
+        $thisMonthTotal = user_play_count_between($db, $userId, $monthStartStr, $nextMonthStartStr);
+        $lastMonthTotal = user_play_count_between($db, $userId, $lastMonthStartStr, $monthStartStr);
+
+        $pageTitle = 'Admin · Usage · ' . (string)($target['username'] ?? '');
+        render('admin_user_usage', [
             'target' => $target,
-            'usageDay' => user_plays_by_day($db, $userId, 14),
-            'usageWeek' => user_plays_by_week($db, $userId, 12),
-            'usageMonth' => user_plays_by_month($db, $userId, 12),
+            'weekStart' => $weekStart,
+            'weekByDay' => $weekByDay,
+            'weekTotal' => $weekTotal,
+            'thisMonthStart' => $monthStart,
+            'thisMonthTotal' => $thisMonthTotal,
+            'lastMonthStart' => $lastMonthStart,
+            'lastMonthTotal' => $lastMonthTotal,
         ]);
         break;
 

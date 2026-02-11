@@ -1,12 +1,4 @@
-<?php
-/** @var array $target */
-/** @var array $usageDay */
-/** @var array $usageWeek */
-/** @var array $usageMonth */
-$usageDay = is_array($usageDay ?? null) ? $usageDay : [];
-$usageWeek = is_array($usageWeek ?? null) ? $usageWeek : [];
-$usageMonth = is_array($usageMonth ?? null) ? $usageMonth : [];
-?>
+<?php /** @var array $target */ ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h4 m-0"><i class="bi bi-person-gear me-2" aria-hidden="true"></i>Admin · Edit User</h1>
   <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/admin/users"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
@@ -77,60 +69,6 @@ $usageMonth = is_array($usageMonth ?? null) ? $usageMonth : [];
     </form>
 
     <hr class="my-4">
-
-    <div class="mb-4">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-        <div class="fw-semibold"><i class="bi bi-activity me-2" aria-hidden="true"></i>Usage</div>
-        <div class="text-muted small">Plays only.</div>
-      </div>
-      <div class="row g-3">
-        <div class="col-lg-4">
-          <div class="text-muted small mb-1">Last 14 days</div>
-          <?php if (!$usageDay): ?>
-            <div class="text-muted small">No plays yet.</div>
-          <?php else: ?>
-            <div class="list-group list-group-flush small">
-              <?php foreach ($usageDay as $r): ?>
-                <div class="list-group-item d-flex align-items-center justify-content-between px-0">
-                  <span class="text-muted"><?= e((string)($r['day'] ?? '')) ?></span>
-                  <span class="fw-semibold"><?= (int)($r['play_count'] ?? 0) ?></span>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </div>
-        <div class="col-lg-4">
-          <div class="text-muted small mb-1">Last 12 weeks</div>
-          <?php if (!$usageWeek): ?>
-            <div class="text-muted small">No plays yet.</div>
-          <?php else: ?>
-            <div class="list-group list-group-flush small">
-              <?php foreach ($usageWeek as $r): ?>
-                <div class="list-group-item d-flex align-items-center justify-content-between px-0">
-                  <span class="text-muted"><?= e((string)($r['week'] ?? '')) ?></span>
-                  <span class="fw-semibold"><?= (int)($r['play_count'] ?? 0) ?></span>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </div>
-        <div class="col-lg-4">
-          <div class="text-muted small mb-1">Last 12 months</div>
-          <?php if (!$usageMonth): ?>
-            <div class="text-muted small">No plays yet.</div>
-          <?php else: ?>
-            <div class="list-group list-group-flush small">
-              <?php foreach ($usageMonth as $r): ?>
-                <div class="list-group-item d-flex align-items-center justify-content-between px-0">
-                  <span class="text-muted"><?= e((string)($r['month'] ?? '')) ?></span>
-                  <span class="fw-semibold"><?= (int)($r['play_count'] ?? 0) ?></span>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </div>
-      </div>
-    </div>
 
   </div>
 </div>

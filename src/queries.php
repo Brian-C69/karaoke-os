@@ -999,6 +999,38 @@ function user_plays_by_month(PDO $db, int $userId, int $months): array
     return $stmt->fetchAll();
 }
 
+function user_plays_by_day_between(PDO $db, int $userId, string $start, string $end): array
+{
+    $userId = (int)$userId;
+    $start = trim($start);
+    $end = trim($end);
+    if ($userId <= 0 || $start === '' || $end === '') return [];
+
+    $stmt = $db->prepare(
+        'SELECT
+            substr(played_at, 1, 10) AS day,
+            COUNT(*) AS play_count
+        FROM plays
+        WHERE user_id = :u AND played_at >= :s AND played_at < :e
+        GROUP BY substr(played_at, 1, 10)
+        ORDER BY day ASC'
+    );
+    $stmt->execute([':u' => $userId, ':s' => $start, ':e' => $end]);
+    return $stmt->fetchAll();
+}
+
+function user_play_count_between(PDO $db, int $userId, string $start, string $end): int
+{
+    $userId = (int)$userId;
+    $start = trim($start);
+    $end = trim($end);
+    if ($userId <= 0 || $start === '' || $end === '') return 0;
+
+    $stmt = $db->prepare('SELECT COUNT(*) FROM plays WHERE user_id = :u AND played_at >= :s AND played_at < :e');
+    $stmt->execute([':u' => $userId, ':s' => $start, ':e' => $end]);
+    return (int)$stmt->fetchColumn();
+}
+
 function admin_list_songs(PDO $db, string $view = 'active'): array
 {
     $view = strtolower(trim($view));
