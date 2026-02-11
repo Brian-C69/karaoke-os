@@ -236,6 +236,96 @@ function migrate_schema(PDO $db): void
 
     // recent plays (per-user history)
     $db->exec('CREATE INDEX IF NOT EXISTS idx_plays_user_played_at ON plays(user_id, played_at DESC);');
+
+    // Full-text search (FTS5): best-effort (SQLite builds may not include FTS5).
+    if (!table_exists($db, 'songs_fts')) {
+        try {
+            $db->exec(
+                "CREATE VIRTUAL TABLE songs_fts USING fts5(
+                    title,
+                    artist,
+                    content='songs',
+                    content_rowid='id',
+                    tokenize='unicode61'
+                );"
+            );
+            $db->exec("INSERT INTO songs_fts(songs_fts) VALUES('rebuild');");
+        } catch (Throwable $e) {
+            // ignore (FTS5 not available)
+        }
+    }
+    if (!table_exists($db, 'artists_fts')) {
+        try {
+            $db->exec(
+                "CREATE VIRTUAL TABLE artists_fts USING fts5(
+                    name,
+                    content='artists',
+                    content_rowid='id',
+                    tokenize='unicode61'
+                );"
+            );
+            $db->exec("INSERT INTO artists_fts(artists_fts) VALUES('rebuild');");
+        } catch (Throwable $e) {
+            // ignore (FTS5 not available)
+        }
+    }
+
+    if (table_exists($db, 'songs_fts')) {
+        try {
+            $db->exec(
+                "CREATE TRIGGER IF NOT EXISTS songs_fts_ai AFTER INSERT ON songs BEGIN
+                    INSERT INTO songs_fts(rowid, title, artist) VALUES (new.id, new.title, new.artist);
+                END;"
+            );
+            $db->exec(
+                "CREATE TRIGGER IF NOT EXISTS songs_fts_ad AFTER DELETE ON songs BEGIN
+                    INSERT INTO songs_fts(songs_fts, rowid, title, artist) VALUES('delete', old.id, old.title, old.artist);
+                END;"
+            );
+            $db->exec(
+                "CREATE TRIGGER IF NOT EXISTS songs_fts_au AFTER UPDATE ON songs BEGIN
+                    INSERT INTO songs_fts(songs_fts, rowid, title, artist) VALUES('delete', old.id, old.title, old.artist);
+                    INSERT INTO songs_fts(rowid, title, artist) VALUES (new.id, new.title, new.artist);
+                END;"
+            );
+        } catch (Throwable $e) {
+            // ignore
+        }
+    }
+
+    if (table_exists($db, 'artists_fts')) {
+        try {
+            $db->exec(
+                "CREATE TRIGGER IF NOT EXISTS artists_fts_ai AFTER INSERT ON artists BEGIN
+                    INSERT INTO artists_fts(rowid, name) VALUES (new.id, new.name);
+                END;"
+            );
+            $db->exec(
+                "CREATE TRIGGER IF NOT EXISTS artists_fts_ad AFTER DELETE ON artists BEGIN
+                    INSERT INTO artists_fts(artists_fts, rowid, name) VALUES('delete', old.id, old.name);
+                END;"
+            );
+            $db->exec(
+                "CREATE TRIGGER IF NOT EXISTS artists_fts_au AFTER UPDATE ON artists BEGIN
+                    INSERT INTO artists_fts(artists_fts, rowid, name) VALUES('delete', old.id, old.name);
+                    INSERT INTO artists_fts(rowid, name) VALUES (new.id, new.name);
+                END;"
+            );
+        } catch (Throwable $e) {
+            // ignore
+        }
+    }
+}
+
+function table_exists(PDO $db, string $name): bool
+{
+    $name = trim($name);
+    if ($name === '') {
+        return false;
+    }
+    $stmt = $db->prepare("SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name = :n LIMIT 1");
+    $stmt->execute([':n' => $name]);
+    return (bool)$stmt->fetchColumn();
 }
 
 function table_has_column(PDO $db, string $table, string $column): bool

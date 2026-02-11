@@ -1,6 +1,48 @@
 <?php
 declare(strict_types=1);
 
+function fts_build_query(string $q): string
+{
+    $q = trim($q);
+    if ($q === '') {
+        return '';
+    }
+    if (function_exists('mb_substr')) {
+        $q = mb_substr($q, 0, 120);
+    } else {
+        $q = substr($q, 0, 120);
+    }
+
+    // Turn punctuation into spaces so "AC/DC" becomes "AC DC".
+    $q = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $q);
+    $parts = preg_split('/\s+/u', (string)$q, -1, PREG_SPLIT_NO_EMPTY);
+    if (!$parts) {
+        return '';
+    }
+
+    $terms = [];
+    foreach (array_slice($parts, 0, 8) as $p) {
+        $p = trim((string)$p);
+        if ($p === '') continue;
+        $terms[] = $p . '*';
+    }
+    return implode(' AND ', $terms);
+}
+
+function fts_table_ready(PDO $db, string $table): bool
+{
+    static $cache = [];
+    if (array_key_exists($table, $cache)) {
+        return (bool)$cache[$table];
+    }
+    try {
+        $cache[$table] = table_exists($db, $table);
+    } catch (Throwable $e) {
+        $cache[$table] = false;
+    }
+    return (bool)$cache[$table];
+}
+
 function get_home_stats(PDO $db): array
 {
     $songs = (int)$db->query('SELECT COUNT(*) FROM songs WHERE is_active = 1')->fetchColumn();
@@ -13,49 +55,66 @@ function get_home_stats(PDO $db): array
 
 function count_songs(PDO $db, array $filters): int
 {
-    $where = ['is_active = 1'];
+    $where = ['s.is_active = 1'];
     $params = [];
+    $joins = '';
 
-    if (!empty($filters['q'])) {
-        $where[] = '(title LIKE :q OR artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
-    }
-    if (!empty($filters['artist_id']) && (int)$filters['artist_id'] > 0) {
-        $where[] = 'artist_id = :aid';
-        $params[':aid'] = (int)$filters['artist_id'];
-    } elseif (!empty($filters['artist'])) {
-        $where[] = 'artist = :artist';
-        $params[':artist'] = $filters['artist'];
-    }
-    if (!empty($filters['language'])) {
-        if ($filters['language'] === 'Unknown') {
-            $where[] = '(language IS NULL OR TRIM(language) = \'\')';
-        } else {
-            $where[] = 'language = :language';
-            $params[':language'] = $filters['language'];
-        }
-    }
-
-    $sql = 'SELECT COUNT(*) FROM songs WHERE ' . implode(' AND ', $where);
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    return (int)$stmt->fetchColumn();
-}
-
-function find_songs(PDO $db, array $filters, int $limit = 500, int $offset = 0): array
-{
-    $where = ['is_active = 1'];
-    $params = [];
-
-    if (!empty($filters['q'])) {
-        $where[] = '(title LIKE :q OR artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins = ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $qRaw . '%';
     }
     if (!empty($filters['artist_id']) && (int)$filters['artist_id'] > 0) {
         $where[] = 's.artist_id = :aid';
         $params[':aid'] = (int)$filters['artist_id'];
     } elseif (!empty($filters['artist'])) {
-        $where[] = 'artist = :artist';
+        $where[] = 's.artist = :artist';
+        $params[':artist'] = $filters['artist'];
+    }
+    if (!empty($filters['language'])) {
+        if ($filters['language'] === 'Unknown') {
+            $where[] = '(s.language IS NULL OR TRIM(s.language) = \'\')';
+        } else {
+            $where[] = 's.language = :language';
+            $params[':language'] = $filters['language'];
+        }
+    }
+
+    $sql = 'SELECT COUNT(*) FROM songs s' . $joins . 'WHERE ' . implode(' AND ', $where);
+    $stmt = $db->prepare($sql);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, $k === ':aid' ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->execute();
+    return (int)$stmt->fetchColumn();
+}
+
+function find_songs(PDO $db, array $filters, int $limit = 500, int $offset = 0): array
+{
+    $where = ['s.is_active = 1'];
+    $params = [];
+    $joins = '';
+
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins .= ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
+        $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
+        $params[':q'] = '%' . $qRaw . '%';
+    }
+    if (!empty($filters['artist_id']) && (int)$filters['artist_id'] > 0) {
+        $where[] = 's.artist_id = :aid';
+        $params[':aid'] = (int)$filters['artist_id'];
+    } elseif (!empty($filters['artist'])) {
+        $where[] = 's.artist = :artist';
         $params[':artist'] = $filters['artist'];
     }
     if (!empty($filters['language'])) {
@@ -80,6 +139,7 @@ function find_songs(PDO $db, array $filters, int $limit = 500, int $offset = 0):
             s.*,
             COALESCE(p.play_count, 0) AS play_count
         FROM songs s
+        ' . $joins . '
         LEFT JOIN (
             SELECT song_id, COUNT(*) AS play_count
             FROM plays
@@ -204,9 +264,16 @@ function count_favorite_songs(PDO $db, int $userId, array $filters): int
     $where = ['s.is_active = 1', 'f.user_id = :u'];
     $params = [':u' => $userId];
 
-    if (!empty($filters['q'])) {
+    $joins = '';
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins .= ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
         $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
+        $params[':q'] = '%' . $qRaw . '%';
     }
     if (!empty($filters['artist'])) {
         $where[] = 's.artist = :artist';
@@ -221,9 +288,12 @@ function count_favorite_songs(PDO $db, int $userId, array $filters): int
         }
     }
 
-    $sql = 'SELECT COUNT(*) FROM favorites f INNER JOIN songs s ON s.id = f.song_id WHERE ' . implode(' AND ', $where);
+    $sql = 'SELECT COUNT(*) FROM favorites f INNER JOIN songs s ON s.id = f.song_id' . $joins . 'WHERE ' . implode(' AND ', $where);
     $stmt = $db->prepare($sql);
-    $stmt->execute($params);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->execute();
     return (int)$stmt->fetchColumn();
 }
 
@@ -235,9 +305,16 @@ function find_favorite_songs(PDO $db, int $userId, array $filters, int $limit, i
     $where = ['s.is_active = 1', 'f.user_id = :u'];
     $params = [':u' => $userId];
 
-    if (!empty($filters['q'])) {
+    $joins = '';
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins .= ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
         $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
+        $params[':q'] = '%' . $qRaw . '%';
     }
     if (!empty($filters['artist'])) {
         $where[] = 's.artist = :artist';
@@ -266,6 +343,7 @@ function find_favorite_songs(PDO $db, int $userId, array $filters, int $limit, i
             COALESCE(p.play_count, 0) AS play_count
         FROM favorites f
         INNER JOIN songs s ON s.id = f.song_id
+        ' . $joins . '
         LEFT JOIN (
             SELECT song_id, COUNT(*) AS play_count
             FROM plays
@@ -380,14 +458,24 @@ function count_playlist_songs(PDO $db, int $userId, int $playlistId, array $filt
     $where = ['s.is_active = 1', 'ps.playlist_id = :p'];
     $params = [':p' => (int)$playlistId];
 
-    if (!empty($filters['q'])) {
+    $joins = '';
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins .= ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
         $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
+        $params[':q'] = '%' . $qRaw . '%';
     }
 
-    $sql = 'SELECT COUNT(*) FROM playlist_songs ps INNER JOIN songs s ON s.id = ps.song_id WHERE ' . implode(' AND ', $where);
+    $sql = 'SELECT COUNT(*) FROM playlist_songs ps INNER JOIN songs s ON s.id = ps.song_id' . $joins . 'WHERE ' . implode(' AND ', $where);
     $stmt = $db->prepare($sql);
-    $stmt->execute($params);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, $k === ':p' ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->execute();
     return (int)$stmt->fetchColumn();
 }
 
@@ -399,9 +487,16 @@ function find_playlist_songs(PDO $db, int $userId, int $playlistId, array $filte
     $where = ['s.is_active = 1', 'ps.playlist_id = :p'];
     $params = [':p' => (int)$playlistId];
 
-    if (!empty($filters['q'])) {
+    $joins = '';
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins .= ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
         $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
+        $params[':q'] = '%' . $qRaw . '%';
     }
 
     $sort = $filters['sort'] ?? 'latest';
@@ -418,6 +513,7 @@ function find_playlist_songs(PDO $db, int $userId, int $playlistId, array $filte
             COALESCE(p.play_count, 0) AS play_count
         FROM playlist_songs ps
         INNER JOIN songs s ON s.id = ps.song_id
+        ' . $joins . '
         LEFT JOIN (
             SELECT song_id, COUNT(*) AS play_count
             FROM plays
@@ -615,6 +711,19 @@ function count_artists(PDO $db, string $q = ''): int
     if ($q === '') {
         return (int)$db->query('SELECT COUNT(*) FROM artists')->fetchColumn();
     }
+
+    $qFts = fts_build_query($q);
+    if ($qFts !== '' && fts_table_ready($db, 'artists_fts')) {
+        $stmt = $db->prepare(
+            'SELECT COUNT(*)
+             FROM artists a
+             INNER JOIN artists_fts ON artists_fts.rowid = a.id
+             WHERE artists_fts MATCH :m'
+        );
+        $stmt->execute([':m' => $qFts]);
+        return (int)$stmt->fetchColumn();
+    }
+
     $stmt = $db->prepare('SELECT COUNT(*) FROM artists WHERE name LIKE :q');
     $stmt->execute([':q' => '%' . $q . '%']);
     return (int)$stmt->fetchColumn();
@@ -632,11 +741,19 @@ function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays', 
     }
 
     $q = trim($q);
+    $joins = '';
     $where = '';
     $params = [];
     if ($q !== '') {
-        $where = 'WHERE a.name LIKE :q';
-        $params[':q'] = '%' . $q . '%';
+        $qFts = fts_build_query($q);
+        if ($qFts !== '' && fts_table_ready($db, 'artists_fts')) {
+            $joins .= ' INNER JOIN artists_fts ON artists_fts.rowid = a.id ';
+            $where = 'WHERE artists_fts MATCH :m';
+            $params[':m'] = $qFts;
+        } else {
+            $where = 'WHERE a.name LIKE :q';
+            $params[':q'] = '%' . $q . '%';
+        }
     }
 
     $sql = '
@@ -648,6 +765,7 @@ function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays', 
             COUNT(DISTINCT s.id) AS song_count,
             COALESCE(COUNT(p.id), 0) AS play_count
         FROM artists a
+        ' . $joins . '
         LEFT JOIN songs s ON s.artist_id = a.id AND s.is_active = 1
         LEFT JOIN plays p ON p.song_id = s.id
         ' . $where . '
@@ -816,9 +934,16 @@ function count_recent_songs(PDO $db, int $userId, array $filters, string $mode =
     $where = ['p.user_id = :u', 's.is_active = 1'];
     $params = [':u' => $userId];
 
-    if (!empty($filters['q'])) {
+    $joins = '';
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins .= ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
         $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
+        $params[':q'] = '%' . $qRaw . '%';
     }
 
     $countExpr = $mode === 'history' ? 'COUNT(*)' : 'COUNT(DISTINCT p.song_id)';
@@ -826,10 +951,14 @@ function count_recent_songs(PDO $db, int $userId, array $filters, string $mode =
         SELECT ' . $countExpr . '
         FROM plays p
         INNER JOIN songs s ON s.id = p.song_id
+        ' . $joins . '
         WHERE ' . implode(' AND ', $where) . '
     ';
     $stmt = $db->prepare($sql);
-    $stmt->execute($params);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v, $k === ':u' ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->execute();
     return (int)$stmt->fetchColumn();
 }
 
@@ -846,9 +975,16 @@ function find_recent_songs(PDO $db, int $userId, array $filters, int $limit, int
     $where = ['p.user_id = :u', 's.is_active = 1'];
     $params = [':u' => $userId];
 
-    if (!empty($filters['q'])) {
+    $joins = '';
+    $qRaw = trim((string)($filters['q'] ?? ''));
+    $qFts = $qRaw !== '' ? fts_build_query($qRaw) : '';
+    if ($qFts !== '' && fts_table_ready($db, 'songs_fts')) {
+        $joins .= ' INNER JOIN songs_fts ON songs_fts.rowid = s.id ';
+        $where[] = 'songs_fts MATCH :m';
+        $params[':m'] = $qFts;
+    } elseif ($qRaw !== '') {
         $where[] = '(s.title LIKE :q OR s.artist LIKE :q)';
-        $params[':q'] = '%' . $filters['q'] . '%';
+        $params[':q'] = '%' . $qRaw . '%';
     }
 
     $sort = strtolower(trim((string)($filters['sort'] ?? 'recent')));
@@ -863,6 +999,7 @@ function find_recent_songs(PDO $db, int $userId, array $filters, int $limit, int
                 p.played_at AS played_at
             FROM plays p
             INNER JOIN songs s ON s.id = p.song_id
+            ' . $joins . '
             WHERE ' . implode(' AND ', $where) . '
             ORDER BY p.played_at DESC
             LIMIT :lim OFFSET :off
@@ -891,6 +1028,7 @@ function find_recent_songs(PDO $db, int $userId, array $filters, int $limit, int
             COUNT(p.id) AS user_play_count
         FROM plays p
         INNER JOIN songs s ON s.id = p.song_id
+        ' . $joins . '
         WHERE ' . implode(' AND ', $where) . '
         GROUP BY s.id
         ORDER BY ' . $orderBy . '
