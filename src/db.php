@@ -39,6 +39,7 @@ function ensure_schema(PDO $db): void
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             artist TEXT NOT NULL,
+            artist_id INTEGER,
             language TEXT,
             album TEXT,
             cover_url TEXT,
@@ -118,6 +119,12 @@ function migrate_schema(PDO $db): void
         $db->exec('ALTER TABLE songs ADD COLUMN drive_file_id TEXT;');
         $db->exec('CREATE INDEX IF NOT EXISTS idx_songs_drive_file_id ON songs(drive_file_id);');
     }
+    if (!table_has_column($db, 'songs', 'artist_id')) {
+        $db->exec('ALTER TABLE songs ADD COLUMN artist_id INTEGER;');
+    }
+    if (table_has_column($db, 'songs', 'artist_id')) {
+        $db->exec('CREATE INDEX IF NOT EXISTS idx_songs_artist_id ON songs(artist_id);');
+    }
     if (!table_has_column($db, 'songs', 'genre')) {
         $db->exec('ALTER TABLE songs ADD COLUMN genre TEXT;');
         $db->exec('CREATE INDEX IF NOT EXISTS idx_songs_genre ON songs(genre);');
@@ -167,6 +174,22 @@ function migrate_schema(PDO $db): void
          FROM songs
          WHERE artist IS NOT NULL AND TRIM(artist) <> \'\';'
     );
+
+    // Backfill artist_id on songs for faster joins (best-effort, safe to re-run).
+    if (table_has_column($db, 'songs', 'artist_id')) {
+        $db->exec(
+            'UPDATE songs
+             SET artist_id = (
+                 SELECT a.id
+                 FROM artists a
+                 WHERE a.name = TRIM(songs.artist) COLLATE NOCASE
+                 LIMIT 1
+             )
+             WHERE (artist_id IS NULL OR artist_id = 0)
+               AND artist IS NOT NULL
+               AND TRIM(artist) <> \'\';'
+        );
+    }
 
     // favorites + playlists
     $db->exec(

@@ -20,7 +20,10 @@ function count_songs(PDO $db, array $filters): int
         $where[] = '(title LIKE :q OR artist LIKE :q)';
         $params[':q'] = '%' . $filters['q'] . '%';
     }
-    if (!empty($filters['artist'])) {
+    if (!empty($filters['artist_id']) && (int)$filters['artist_id'] > 0) {
+        $where[] = 'artist_id = :aid';
+        $params[':aid'] = (int)$filters['artist_id'];
+    } elseif (!empty($filters['artist'])) {
         $where[] = 'artist = :artist';
         $params[':artist'] = $filters['artist'];
     }
@@ -48,7 +51,10 @@ function find_songs(PDO $db, array $filters, int $limit = 500, int $offset = 0):
         $where[] = '(title LIKE :q OR artist LIKE :q)';
         $params[':q'] = '%' . $filters['q'] . '%';
     }
-    if (!empty($filters['artist'])) {
+    if (!empty($filters['artist_id']) && (int)$filters['artist_id'] > 0) {
+        $where[] = 's.artist_id = :aid';
+        $params[':aid'] = (int)$filters['artist_id'];
+    } elseif (!empty($filters['artist'])) {
         $where[] = 'artist = :artist';
         $params[':artist'] = $filters['artist'];
     }
@@ -86,7 +92,7 @@ function find_songs(PDO $db, array $filters, int $limit = 500, int $offset = 0):
 
     $stmt = $db->prepare($sql);
     foreach ($params as $k => $v) {
-        $stmt->bindValue($k, $v, PDO::PARAM_STR);
+        $stmt->bindValue($k, $v, $k === ':aid' ? PDO::PARAM_INT : PDO::PARAM_STR);
     }
     $stmt->bindValue(':lim', max(1, $limit), PDO::PARAM_INT);
     $stmt->bindValue(':off', max(0, $offset), PDO::PARAM_INT);
@@ -580,7 +586,7 @@ function get_artist(PDO $db, int $id): ?array
             COUNT(DISTINCT s.id) AS song_count,
             COALESCE(COUNT(p.id), 0) AS play_count
          FROM artists a
-         LEFT JOIN songs s ON lower(s.artist) = lower(a.name) AND s.is_active = 1
+         LEFT JOIN songs s ON s.artist_id = a.id AND s.is_active = 1
          LEFT JOIN plays p ON p.song_id = s.id
          WHERE a.id = :id
          GROUP BY a.id
@@ -642,7 +648,7 @@ function find_artists(PDO $db, int $limit, int $offset, string $sort = 'plays', 
             COUNT(DISTINCT s.id) AS song_count,
             COALESCE(COUNT(p.id), 0) AS play_count
         FROM artists a
-        LEFT JOIN songs s ON lower(s.artist) = lower(a.name) AND s.is_active = 1
+        LEFT JOIN songs s ON s.artist_id = a.id AND s.is_active = 1
         LEFT JOIN plays p ON p.song_id = s.id
         ' . $where . '
         GROUP BY a.id
@@ -1123,15 +1129,20 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
     }
 
     $now = now_db();
-    upsert_artist($db, $artist);
+    $artistRow = upsert_artist($db, $artist);
+    $artistId = is_array($artistRow) ? (int)($artistRow['id'] ?? 0) : 0;
+    if ($artistId <= 0) {
+        $artistId = 0;
+    }
     if ($id === null) {
         $stmt = $db->prepare(
-            'INSERT INTO songs (title, artist, language, album, cover_url, genre, year, drive_url, drive_file_id, is_active, created_at, updated_at)
-             VALUES (:t, :a, :l, :al, :c, :g, :y, :d, :fid, :ia, :ca, :ua)'
+            'INSERT INTO songs (title, artist, artist_id, language, album, cover_url, genre, year, drive_url, drive_file_id, is_active, created_at, updated_at)
+             VALUES (:t, :a, :aid, :l, :al, :c, :g, :y, :d, :fid, :ia, :ca, :ua)'
         );
         $stmt->execute([
             ':t' => $title,
             ':a' => $artist,
+            ':aid' => $artistId > 0 ? $artistId : null,
             ':l' => $language !== '' ? $language : null,
             ':al' => $album !== '' ? $album : null,
             ':c' => $coverUrl !== '' ? $coverUrl : null,
@@ -1148,13 +1159,14 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
 
     $stmt = $db->prepare(
         'UPDATE songs
-         SET title = :t, artist = :a, language = :l, album = :al, cover_url = :c, genre = :g, year = :y, drive_url = :d, drive_file_id = :fid, is_active = :ia, updated_at = :ua
+         SET title = :t, artist = :a, artist_id = :aid, language = :l, album = :al, cover_url = :c, genre = :g, year = :y, drive_url = :d, drive_file_id = :fid, is_active = :ia, updated_at = :ua
          WHERE id = :id'
     );
     $stmt->execute([
         ':id' => $id,
         ':t' => $title,
         ':a' => $artist,
+        ':aid' => $artistId > 0 ? $artistId : null,
         ':l' => $language !== '' ? $language : null,
         ':al' => $album !== '' ? $album : null,
         ':c' => $coverUrl !== '' ? $coverUrl : null,

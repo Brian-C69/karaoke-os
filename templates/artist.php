@@ -47,7 +47,7 @@ if ($view !== 'tile') $cancelParams['view'] = $view;
     <form method="get" action="<?= e(APP_BASE) ?>/" id="songsSearchForm" class="row g-2 align-items-end" data-page-route="/artist" data-api-route="/api/songs">
       <input type="hidden" name="r" value="/artist">
       <input type="hidden" name="id" value="<?= (int)$artist['id'] ?>">
-      <input type="hidden" name="artist" id="songsArtistFixed" value="<?= e((string)$artist['name']) ?>">
+      <input type="hidden" name="artist_id" id="songsArtistIdFixed" value="<?= (int)$artist['id'] ?>">
       <input type="hidden" name="view" id="songsView" value="<?= e($view) ?>">
 
       <div class="col-12 col-lg-5 position-relative">

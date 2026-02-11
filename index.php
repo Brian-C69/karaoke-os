@@ -318,7 +318,7 @@ switch ($route) {
 
         $filters = [
             'q' => trim((string)($_GET['q'] ?? '')),
-            'artist' => (string)$artist['name'],
+            'artist_id' => (int)$artist['id'],
             'language' => trim((string)($_GET['language'] ?? '')),
             'sort' => trim((string)($_GET['sort'] ?? 'latest')),
         ];
@@ -514,6 +514,7 @@ switch ($route) {
         header('Content-Type: application/json; charset=utf-8');
         $filters = [
             'q' => trim((string)($_GET['q'] ?? '')),
+            'artist_id' => (int)($_GET['artist_id'] ?? 0),
             'artist' => trim((string)($_GET['artist'] ?? '')),
             'language' => trim((string)($_GET['language'] ?? '')),
             'sort' => trim((string)($_GET['sort'] ?? 'latest')),
@@ -836,14 +837,19 @@ switch ($route) {
         }
 
         $now = now_db();
-        upsert_artist($db, $artist);
+        $artistRow = upsert_artist($db, $artist);
+        $artistId = is_array($artistRow) ? (int)($artistRow['id'] ?? 0) : 0;
+        if ($artistId <= 0) {
+            $artistId = 0;
+        }
         $stmt = $db->prepare(
-            'INSERT INTO songs (title, artist, language, album, cover_url, drive_url, drive_file_id, is_active, created_at, updated_at)
-             VALUES (:t, :a, :l, :al, :c, :d, :fid, :ia, :ca, :ua)'
+            'INSERT INTO songs (title, artist, artist_id, language, album, cover_url, drive_url, drive_file_id, is_active, created_at, updated_at)
+             VALUES (:t, :a, :aid, :l, :al, :c, :d, :fid, :ia, :ca, :ua)'
         );
         $stmt->execute([
             ':t' => $title,
             ':a' => $artist,
+            ':aid' => $artistId > 0 ? $artistId : null,
             ':l' => $language !== '' ? $language : null,
             ':al' => $album !== '' ? $album : null,
             ':c' => $coverUrl !== '' ? $coverUrl : null,

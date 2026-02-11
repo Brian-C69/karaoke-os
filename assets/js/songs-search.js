@@ -5,6 +5,7 @@
   const perPageSelect = document.getElementById('songsPerPage');
   const viewInput = document.getElementById('songsView');
   const artistFixedInput = document.getElementById('songsArtistFixed');
+  const artistIdFixedInput = document.getElementById('songsArtistIdFixed');
   const languageFixedInput = document.getElementById('songsLanguageFixed');
   const recentModeSelect = document.getElementById('recentMode');
   const idFixedInput = form?.querySelector('input[name="id"]');
@@ -47,9 +48,14 @@
     if (recentModeSelect?.value) url.searchParams.set('mode', String(recentModeSelect.value));
 
     const params = new URLSearchParams(window.location.search);
+    const artistId = (artistIdFixedInput?.value || params.get('artist_id') || '').trim();
     const artist = (artistFixedInput?.value || params.get('artist') || '').trim();
     const language = (languageFixedInput?.value || params.get('language') || '').trim();
-    if (artist) url.searchParams.set('artist', artist);
+    if (artistId) {
+      url.searchParams.set('artist_id', artistId);
+    } else if (artist) {
+      url.searchParams.set('artist', artist);
+    }
     if (language) url.searchParams.set('language', language);
 
     return url;
@@ -59,7 +65,14 @@
     const url = new URL(window.location.href);
     url.searchParams.set('r', pageRoute);
     if (idFixedInput?.value) url.searchParams.set('id', String(idFixedInput.value));
-    if (artistFixedInput?.value) url.searchParams.set('artist', String(artistFixedInput.value));
+    if (artistIdFixedInput) {
+      if (artistIdFixedInput.value) url.searchParams.set('artist_id', String(artistIdFixedInput.value));
+      else url.searchParams.delete('artist_id');
+    }
+    if (artistFixedInput) {
+      if (artistFixedInput.value) url.searchParams.set('artist', String(artistFixedInput.value));
+      else url.searchParams.delete('artist');
+    }
     if (languageFixedInput?.value) url.searchParams.set('language', String(languageFixedInput.value));
     if (recentModeSelect?.value) url.searchParams.set('mode', String(recentModeSelect.value));
 
