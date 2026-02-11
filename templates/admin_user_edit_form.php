@@ -132,16 +132,5 @@ $usageMonth = is_array($usageMonth ?? null) ? $usageMonth : [];
       </div>
     </div>
 
-    <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/user-sync-drive">
-      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="id" value="<?= (int)$target['id'] ?>">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div>
-          <div class="fw-semibold">Drive access sync</div>
-          <div class="text-muted small">Grants viewer access for all songs that have a Drive file ID.</div>
-        </div>
-        <button class="btn btn-outline-primary" type="submit"><i class="bi bi-cloud-check me-1" aria-hidden="true"></i>Sync Drive access (all songs)</button>
-      </div>
-    </form>
   </div>
 </div>

@@ -1087,40 +1087,6 @@ switch ($route) {
         redirect('/?r=/admin/users');
         break;
 
-    case '/admin/user-sync-drive':
-        require_admin();
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo 'Method Not Allowed';
-            exit;
-        }
-        csrf_verify();
-        $userId = (int)($_POST['id'] ?? 0);
-        $target = get_user($db, $userId);
-        if (!$target) {
-            flash('danger', 'User not found.');
-            redirect('/?r=/admin/users');
-        }
-        if (empty($target['email']) || empty($target['email_verified_at']) || !user_is_paid($target)) {
-            flash('warning', 'User must be paid + email-verified before syncing Drive access.');
-            redirect('/?r=/admin/user-edit&id=' . $userId);
-        }
-
-        $songs = admin_list_songs_with_drive($db);
-        $ok = 0;
-        $err = 0;
-        foreach ($songs as $s) {
-            try {
-                ensure_drive_access_for_user($db, $s, $target);
-                $ok++;
-            } catch (Throwable $e) {
-                $err++;
-            }
-        }
-        flash('success', "Drive sync done. ok={$ok}, errors={$err}.");
-        redirect('/?r=/admin/user-edit&id=' . $userId);
-        break;
-
     case '/admin/analytics':
         require_admin();
         $pageTitle = 'Admin · Analytics';
