@@ -70,6 +70,9 @@
       gap: .75rem;
       text-align: center;
       padding: 2rem;
+      opacity: 0;
+      transform: translateY(8px) scale(.985);
+      transition: opacity 260ms ease, transform 260ms ease;
     }
     #pwa-splash img {
       width: 96px;
@@ -83,13 +86,13 @@
       font-size: 1.25rem;
       line-height: 1.1;
     }
-    #pwa-splash .pwa-splash-sub {
-      opacity: .7;
-      font-size: .9rem;
-    }
     #pwa-splash.pwa-splash--show {
       opacity: 1;
       pointer-events: auto;
+    }
+    #pwa-splash.pwa-splash--show .pwa-splash-inner {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
     #pwa-splash.pwa-splash--hide {
       opacity: 0;
@@ -105,7 +108,6 @@
     <div class="pwa-splash-inner">
       <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="">
       <div class="pwa-splash-title">Karaoke OS</div>
-      <div class="pwa-splash-sub">Loading…</div>
     </div>
   </div>
   <script>
@@ -135,10 +137,11 @@
         return;
       }
 
-      el.classList.add('pwa-splash--show');
+      // Ensure transitions fire.
+      requestAnimationFrame(() => el.classList.add('pwa-splash--show'));
 
       const started = Date.now();
-      const minMs = 450;
+      const minMs = 2000;
       const hide = () => {
         const remaining = minMs - (Date.now() - started);
         window.setTimeout(() => {
