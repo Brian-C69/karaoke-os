@@ -1,9 +1,6 @@
 <?php /** @var array $userFull */ ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h4 m-0"><i class="bi bi-person-circle me-2" aria-hidden="true"></i>Profile</h1>
-  <div class="d-flex align-items-center gap-2">
-    <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
-  </div>
 </div>
 
 <div class="card shadow-sm mb-3 d-lg-none">
