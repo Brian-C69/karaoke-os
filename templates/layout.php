@@ -49,6 +49,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="<?= e(APP_BASE) ?>/assets/js/theme.js"></script>
+  <script>
+    (() => {
+      const isStandalone =
+        (typeof navigator !== 'undefined' && navigator.standalone === true) ||
+        (typeof window !== 'undefined' &&
+          window.matchMedia &&
+          window.matchMedia('(display-mode: standalone)').matches);
+      if (!isStandalone) return;
+
+      try {
+        if (sessionStorage.getItem('kos_splash_shown') === '1') return;
+        sessionStorage.setItem('kos_splash_shown', '1');
+      } catch {}
+
+      document.documentElement.classList.add('pwa-splash-on');
+    })();
+  </script>
   <style>
     #pwa-splash {
       position: fixed;
@@ -87,13 +104,23 @@
       line-height: 1.1;
     }
     #pwa-splash .pwa-splash-accent { color: #db4143; }
-    #pwa-splash.pwa-splash--show {
+    @keyframes pwaSplashFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes pwaSplashInnerIn {
+      from { opacity: 0; transform: translateY(8px) scale(.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    html.pwa-splash-on #pwa-splash {
       opacity: 1;
       pointer-events: auto;
+      animation: pwaSplashFadeIn 220ms ease both;
     }
-    #pwa-splash.pwa-splash--show .pwa-splash-inner {
+    html.pwa-splash-on #pwa-splash .pwa-splash-inner {
       opacity: 1;
       transform: translateY(0) scale(1);
+      animation: pwaSplashInnerIn 260ms ease both;
     }
     #pwa-splash.pwa-splash--hide {
       opacity: 0;
@@ -116,30 +143,10 @@
       const el = document.getElementById('pwa-splash');
       if (!el) return;
 
-      const isStandalone =
-        (typeof navigator !== 'undefined' && navigator.standalone === true) ||
-        (typeof window !== 'undefined' &&
-          window.matchMedia &&
-          window.matchMedia('(display-mode: standalone)').matches);
-
-      if (!isStandalone) {
+      if (!document.documentElement.classList.contains('pwa-splash-on')) {
         el.remove();
         return;
       }
-
-      // Show only once per app session (prevents flashing on internal nav).
-      let alreadyShown = false;
-      try {
-        alreadyShown = sessionStorage.getItem('kos_splash_shown') === '1';
-        sessionStorage.setItem('kos_splash_shown', '1');
-      } catch {}
-      if (alreadyShown) {
-        el.remove();
-        return;
-      }
-
-      // Ensure transitions fire.
-      requestAnimationFrame(() => el.classList.add('pwa-splash--show'));
 
       const started = Date.now();
       const minMs = 2000;
