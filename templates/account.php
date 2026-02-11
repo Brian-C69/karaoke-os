@@ -82,15 +82,6 @@
   </div>
 </div>
 
-<div class="card shadow-sm mt-4 d-lg-none">
-  <div class="card-body">
-    <div class="d-flex align-items-center justify-content-between gap-2">
-      <div class="text-muted small">Version</div>
-      <div class="fw-semibold">v<?= e(APP_VERSION) ?></div>
-    </div>
-  </div>
-</div>
-
 <div class="card shadow-sm mb-3">
   <div class="card-body">
     <div class="row g-3 align-items-end">
@@ -131,6 +122,15 @@
           <?php endif; ?>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mt-3 mb-3 d-lg-none">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between gap-2">
+      <div class="text-muted small">Version</div>
+      <div class="fw-semibold">v<?= e(APP_VERSION) ?></div>
     </div>
   </div>
 </div>
