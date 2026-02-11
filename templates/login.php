@@ -1,14 +1,12 @@
 <div class="row justify-content-center">
   <div class="col-md-5 col-lg-4">
+    <div class="text-center mb-3">
+      <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="" width="56" height="56" style="object-fit:contain;">
+      <div class="fw-bold mt-2" style="font-size:1.35rem;">Karaoke <span style="color:#db4143;">OS</span></div>
+      <div class="text-muted small">Sign in to play</div>
+    </div>
     <div class="card shadow-sm">
       <div class="card-body">
-        <div class="d-flex align-items-center gap-2 mb-3">
-          <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="" width="40" height="40" style="object-fit:contain;">
-          <div class="lh-sm">
-            <div class="fw-bold">Karaoke <span style="color:#db4143;">OS</span></div>
-            <div class="text-muted small">Sign in to play</div>
-          </div>
-        </div>
         <form method="post" action="<?= e(APP_BASE) ?>/?r=/login">
           <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
           <div class="mb-3">
