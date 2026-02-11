@@ -68,6 +68,8 @@ switch ($route) {
         $now = new DateTimeImmutable('now');
         $weekStart = $now->modify('monday this week')->setTime(0, 0, 0);
         $weekEnd = $weekStart->modify('+7 days');
+        $lastWeekStart = $weekStart->modify('-7 days');
+        $lastWeekEnd = $weekStart;
 
         $monthStart = $now->modify('first day of this month')->setTime(0, 0, 0);
         $nextMonthStart = $monthStart->modify('+1 month');
@@ -75,12 +77,16 @@ switch ($route) {
 
         $weekStartStr = $weekStart->format('Y-m-d H:i:s');
         $weekEndStr = $weekEnd->format('Y-m-d H:i:s');
+        $lastWeekStartStr = $lastWeekStart->format('Y-m-d H:i:s');
+        $lastWeekEndStr = $lastWeekEnd->format('Y-m-d H:i:s');
         $monthStartStr = $monthStart->format('Y-m-d H:i:s');
         $nextMonthStartStr = $nextMonthStart->format('Y-m-d H:i:s');
         $lastMonthStartStr = $lastMonthStart->format('Y-m-d H:i:s');
 
         $weekByDay = user_plays_by_day_between($db, $uid, $weekStartStr, $weekEndStr);
         $weekTotal = user_play_count_between($db, $uid, $weekStartStr, $weekEndStr);
+        $lastWeekByDay = user_plays_by_day_between($db, $uid, $lastWeekStartStr, $lastWeekEndStr);
+        $lastWeekTotal = user_play_count_between($db, $uid, $lastWeekStartStr, $lastWeekEndStr);
         $thisMonthTotal = user_play_count_between($db, $uid, $monthStartStr, $nextMonthStartStr);
         $lastMonthTotal = user_play_count_between($db, $uid, $lastMonthStartStr, $monthStartStr);
 
@@ -89,6 +95,9 @@ switch ($route) {
             'weekStart' => $weekStart,
             'weekByDay' => $weekByDay,
             'weekTotal' => $weekTotal,
+            'lastWeekStart' => $lastWeekStart,
+            'lastWeekByDay' => $lastWeekByDay,
+            'lastWeekTotal' => $lastWeekTotal,
             'thisMonthStart' => $monthStart,
             'thisMonthTotal' => $thisMonthTotal,
             'lastMonthStart' => $lastMonthStart,
@@ -1076,6 +1085,8 @@ switch ($route) {
         $now = new DateTimeImmutable('now');
         $weekStart = $now->modify('monday this week')->setTime(0, 0, 0);
         $weekEnd = $weekStart->modify('+7 days');
+        $lastWeekStart = $weekStart->modify('-7 days');
+        $lastWeekEnd = $weekStart;
 
         $monthStart = $now->modify('first day of this month')->setTime(0, 0, 0);
         $nextMonthStart = $monthStart->modify('+1 month');
@@ -1083,12 +1094,16 @@ switch ($route) {
 
         $weekStartStr = $weekStart->format('Y-m-d H:i:s');
         $weekEndStr = $weekEnd->format('Y-m-d H:i:s');
+        $lastWeekStartStr = $lastWeekStart->format('Y-m-d H:i:s');
+        $lastWeekEndStr = $lastWeekEnd->format('Y-m-d H:i:s');
         $monthStartStr = $monthStart->format('Y-m-d H:i:s');
         $nextMonthStartStr = $nextMonthStart->format('Y-m-d H:i:s');
         $lastMonthStartStr = $lastMonthStart->format('Y-m-d H:i:s');
 
         $weekByDay = user_plays_by_day_between($db, $userId, $weekStartStr, $weekEndStr);
         $weekTotal = user_play_count_between($db, $userId, $weekStartStr, $weekEndStr);
+        $lastWeekByDay = user_plays_by_day_between($db, $userId, $lastWeekStartStr, $lastWeekEndStr);
+        $lastWeekTotal = user_play_count_between($db, $userId, $lastWeekStartStr, $lastWeekEndStr);
         $thisMonthTotal = user_play_count_between($db, $userId, $monthStartStr, $nextMonthStartStr);
         $lastMonthTotal = user_play_count_between($db, $userId, $lastMonthStartStr, $monthStartStr);
 
@@ -1098,6 +1113,9 @@ switch ($route) {
             'weekStart' => $weekStart,
             'weekByDay' => $weekByDay,
             'weekTotal' => $weekTotal,
+            'lastWeekStart' => $lastWeekStart,
+            'lastWeekByDay' => $lastWeekByDay,
+            'lastWeekTotal' => $lastWeekTotal,
             'thisMonthStart' => $monthStart,
             'thisMonthTotal' => $thisMonthTotal,
             'lastMonthStart' => $lastMonthStart,
