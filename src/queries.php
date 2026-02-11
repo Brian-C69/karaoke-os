@@ -116,7 +116,7 @@ function get_song(PDO $db, int $id): ?array
 
 function get_user(PDO $db, int $id): ?array
 {
-    $stmt = $db->prepare('SELECT id, username, role, email, email_verified_at, is_paid, paid_until, created_at, last_login_at FROM users WHERE id = :id');
+    $stmt = $db->prepare('SELECT id, username, role, email, email_verified_at, is_paid, paid_until, is_revoked, created_at, last_login_at FROM users WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch();
     return $row ?: null;
@@ -1114,7 +1114,13 @@ function admin_set_song_active(PDO $db, int $id, bool $active): void
 
 function admin_list_users(PDO $db): array
 {
-    return $db->query('SELECT id, username, email, email_verified_at, is_paid, paid_until, role, created_at, last_login_at FROM users ORDER BY id ASC')->fetchAll();
+    return $db->query('SELECT id, username, email, email_verified_at, is_paid, paid_until, is_revoked, role, created_at, last_login_at FROM users ORDER BY id ASC')->fetchAll();
+}
+
+function admin_set_user_revoked(PDO $db, int $id, bool $revoked): void
+{
+    $stmt = $db->prepare('UPDATE users SET is_revoked = :r WHERE id = :id');
+    $stmt->execute([':id' => (int)$id, ':r' => $revoked ? 1 : 0]);
 }
 
 function admin_create_user(PDO $db, string $username, string $password, string $role, ?string $email, int $isPaid, ?string $paidUntil): void

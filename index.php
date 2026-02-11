@@ -1028,6 +1028,56 @@ switch ($route) {
         render('admin_user_edit_form', ['target' => $target]);
         break;
 
+    case '/admin/user-revoke':
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo 'Method Not Allowed';
+            exit;
+        }
+        csrf_verify();
+        $targetId = (int)($_POST['id'] ?? 0);
+        if ($targetId <= 0) {
+            flash('danger', 'User not found.');
+            redirect('/?r=/admin/users');
+        }
+        if ($targetId === (int)current_user()['id']) {
+            flash('danger', 'You cannot revoke your own account.');
+            redirect('/?r=/admin/users');
+        }
+        $target = get_user($db, $targetId);
+        if (!$target) {
+            flash('danger', 'User not found.');
+            redirect('/?r=/admin/users');
+        }
+        admin_set_user_revoked($db, $targetId, true);
+        flash('success', 'User access revoked.');
+        redirect('/?r=/admin/users');
+        break;
+
+    case '/admin/user-restore':
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo 'Method Not Allowed';
+            exit;
+        }
+        csrf_verify();
+        $targetId = (int)($_POST['id'] ?? 0);
+        if ($targetId <= 0) {
+            flash('danger', 'User not found.');
+            redirect('/?r=/admin/users');
+        }
+        $target = get_user($db, $targetId);
+        if (!$target) {
+            flash('danger', 'User not found.');
+            redirect('/?r=/admin/users');
+        }
+        admin_set_user_revoked($db, $targetId, false);
+        flash('success', 'User access restored.');
+        redirect('/?r=/admin/users');
+        break;
+
     case '/admin/user-sync-drive':
         require_admin();
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

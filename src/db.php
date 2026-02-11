@@ -108,6 +108,10 @@ function migrate_schema(PDO $db): void
     if (!table_has_column($db, 'users', 'paid_until')) {
         $db->exec('ALTER TABLE users ADD COLUMN paid_until TEXT;');
     }
+    if (!table_has_column($db, 'users', 'is_revoked')) {
+        $db->exec('ALTER TABLE users ADD COLUMN is_revoked INTEGER NOT NULL DEFAULT 0;');
+        $db->exec('CREATE INDEX IF NOT EXISTS idx_users_is_revoked ON users(is_revoked);');
+    }
 
     // songs additions
     if (!table_has_column($db, 'songs', 'drive_file_id')) {

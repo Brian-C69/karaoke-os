@@ -14,7 +14,7 @@ function current_user_full(PDO $db): ?array
         return null;
     }
 
-    $stmt = $db->prepare('SELECT id, username, role, email, email_verified_at, is_paid, paid_until, created_at, last_login_at FROM users WHERE id = :id');
+    $stmt = $db->prepare('SELECT id, username, role, email, email_verified_at, is_paid, paid_until, is_revoked, created_at, last_login_at FROM users WHERE id = :id');
     $stmt->execute([':id' => (int)($u['id'] ?? 0)]);
     $row = $stmt->fetch();
     return $row ?: null;
@@ -24,6 +24,12 @@ function require_login(): void
 {
     if (!current_user()) {
         flash('warning', 'Please login to continue.');
+        redirect('/?r=/login');
+    }
+    $full = current_user_full(db());
+    if ($full && (int)($full['is_revoked'] ?? 0) === 1) {
+        logout_now();
+        flash('danger', 'Your access has been revoked. Please contact admin.');
         redirect('/?r=/login');
     }
 }
@@ -79,10 +85,13 @@ function user_is_paid(array $user): bool
 
 function login_attempt(PDO $db, string $username, string $password): bool
 {
-    $stmt = $db->prepare('SELECT id, username, password_hash, role FROM users WHERE username = :u OR email = :u');
+    $stmt = $db->prepare('SELECT id, username, password_hash, role, is_revoked FROM users WHERE username = :u OR email = :u');
     $stmt->execute([':u' => $username]);
     $row = $stmt->fetch();
     if (!$row) {
+        return false;
+    }
+    if ((int)($row['is_revoked'] ?? 0) === 1) {
         return false;
     }
     if (!password_verify($password, (string)$row['password_hash'])) {
