@@ -1,5 +1,5 @@
-<div class="row justify-content-center">
-  <div class="col-md-5 col-lg-4">
+<div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 10rem);">
+  <div class="w-100" style="max-width: 420px;">
     <div class="text-center mb-3">
       <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="" width="56" height="56" style="object-fit:contain;">
       <div class="fw-bold mt-2" style="font-size:1.35rem;">Karaoke <span style="color:#db4143;">OS</span></div>
@@ -19,7 +19,6 @@
           </div>
           <button class="btn btn-primary w-100"><i class="bi bi-key me-1" aria-hidden="true"></i>Login</button>
         </form>
-        <div class="text-muted small mt-3">Admin creates user accounts.</div>
       </div>
     </div>
   </div>
