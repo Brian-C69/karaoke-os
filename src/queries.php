@@ -962,6 +962,15 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
     $language = trim((string)($input['language'] ?? ''));
     $album = trim((string)($input['album'] ?? ''));
     $coverUrl = trim((string)($input['cover_url'] ?? ''));
+    $genre = trim((string)($input['genre'] ?? ''));
+    $yearRaw = trim((string)($input['year'] ?? ''));
+    $year = null;
+    if ($yearRaw !== '' && preg_match('/^[0-9]{4}$/', $yearRaw)) {
+        $year = (int)$yearRaw;
+        if ($year < 1900 || $year > ((int)(new DateTimeImmutable('now'))->format('Y') + 1)) {
+            $year = null;
+        }
+    }
     $driveInput = trim((string)($input['drive'] ?? ($input['drive_url'] ?? '')));
     $isActive = isset($input['is_active']) ? 1 : 0;
 
@@ -989,7 +998,7 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
     }
 
     // Auto-fill metadata if missing.
-    if ($album === '' || $coverUrl === '' || $language === '') {
+    if ($album === '' || $coverUrl === '' || $language === '' || $genre === '' || $year === null) {
         try {
             $meta = lookup_song_metadata($title, $artist);
             if (is_array($meta)) {
@@ -1002,6 +1011,15 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
                 if ($language === '' && !empty($meta['language'])) {
                     $language = (string)$meta['language'];
                 }
+                if ($genre === '' && !empty($meta['genre'])) {
+                    $genre = (string)$meta['genre'];
+                }
+                if ($year === null && !empty($meta['year']) && is_numeric($meta['year'])) {
+                    $y = (int)$meta['year'];
+                    if ($y >= 1900 && $y <= ((int)(new DateTimeImmutable('now'))->format('Y') + 1)) {
+                        $year = $y;
+                    }
+                }
             }
         } catch (Throwable $e) {
             // Ignore lookup failures; allow manual override later.
@@ -1012,8 +1030,8 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
     upsert_artist($db, $artist);
     if ($id === null) {
         $stmt = $db->prepare(
-            'INSERT INTO songs (title, artist, language, album, cover_url, drive_url, drive_file_id, is_active, created_at, updated_at)
-             VALUES (:t, :a, :l, :al, :c, :d, :fid, :ia, :ca, :ua)'
+            'INSERT INTO songs (title, artist, language, album, cover_url, genre, year, drive_url, drive_file_id, is_active, created_at, updated_at)
+             VALUES (:t, :a, :l, :al, :c, :g, :y, :d, :fid, :ia, :ca, :ua)'
         );
         $stmt->execute([
             ':t' => $title,
@@ -1021,6 +1039,8 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
             ':l' => $language !== '' ? $language : null,
             ':al' => $album !== '' ? $album : null,
             ':c' => $coverUrl !== '' ? $coverUrl : null,
+            ':g' => $genre !== '' ? $genre : null,
+            ':y' => $year,
             ':d' => $driveUrl,
             ':fid' => $fileId,
             ':ia' => $isActive,
@@ -1032,7 +1052,7 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
 
     $stmt = $db->prepare(
         'UPDATE songs
-         SET title = :t, artist = :a, language = :l, album = :al, cover_url = :c, drive_url = :d, drive_file_id = :fid, is_active = :ia, updated_at = :ua
+         SET title = :t, artist = :a, language = :l, album = :al, cover_url = :c, genre = :g, year = :y, drive_url = :d, drive_file_id = :fid, is_active = :ia, updated_at = :ua
          WHERE id = :id'
     );
     $stmt->execute([
@@ -1042,6 +1062,8 @@ function admin_upsert_song(PDO $db, ?int $id, array $input): int
         ':l' => $language !== '' ? $language : null,
         ':al' => $album !== '' ? $album : null,
         ':c' => $coverUrl !== '' ? $coverUrl : null,
+        ':g' => $genre !== '' ? $genre : null,
+        ':y' => $year,
         ':d' => $driveUrl,
         ':fid' => $fileId,
         ':ia' => $isActive,

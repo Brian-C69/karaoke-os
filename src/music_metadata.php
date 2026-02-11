@@ -63,6 +63,12 @@ function itunes_candidates(string $title, string $artist, int $limit): array
         $track = (string)($r['trackName'] ?? '');
         $art = (string)($r['artistName'] ?? '');
         $album = (string)($r['collectionName'] ?? '');
+        $genre = (string)($r['primaryGenreName'] ?? '');
+        $releaseDate = (string)($r['releaseDate'] ?? '');
+        $year = null;
+        if ($releaseDate !== '' && preg_match('/^([0-9]{4})-/', $releaseDate, $m)) {
+            $year = (int)$m[1];
+        }
         $cover = (string)($r['artworkUrl100'] ?? ($r['artworkUrl60'] ?? ''));
         if ($cover !== '') {
             $cover = preg_replace('#/([0-9]+x[0-9]+)bb\\.(jpg|png)$#i', '/600x600bb.$2', $cover) ?: $cover;
@@ -91,6 +97,8 @@ function itunes_candidates(string $title, string $artist, int $limit): array
             'title' => $track,
             'artist' => $art,
             'album' => $album,
+            'genre' => $genre,
+            'year' => $year,
             'language' => $langGuess,
             'cover_url' => $cover,
         ];

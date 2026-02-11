@@ -34,6 +34,8 @@ $backHref = e(APP_BASE) . '/?' . http_build_query($backParams);
             <div class="list-group position-absolute w-100 shadow-sm d-none" id="titleSuggest" style="z-index: 5;"></div>
           </div>
         </div>
+        <input type="hidden" name="genre" value="<?= e((string)($song['genre'] ?? '')) ?>">
+        <input type="hidden" name="year" value="<?= e((string)($song['year'] ?? '')) ?>">
         <div class="col-12">
           <label class="form-label">Google Drive File URL/ID *</label>
           <input class="form-control" name="drive" required value="<?= e((string)($song['drive_file_id'] ?? ($song['drive_url'] ?? ''))) ?>" placeholder="Paste Drive link here">

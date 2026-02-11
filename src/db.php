@@ -114,6 +114,14 @@ function migrate_schema(PDO $db): void
         $db->exec('ALTER TABLE songs ADD COLUMN drive_file_id TEXT;');
         $db->exec('CREATE INDEX IF NOT EXISTS idx_songs_drive_file_id ON songs(drive_file_id);');
     }
+    if (!table_has_column($db, 'songs', 'genre')) {
+        $db->exec('ALTER TABLE songs ADD COLUMN genre TEXT;');
+        $db->exec('CREATE INDEX IF NOT EXISTS idx_songs_genre ON songs(genre);');
+    }
+    if (!table_has_column($db, 'songs', 'year')) {
+        $db->exec('ALTER TABLE songs ADD COLUMN year INTEGER;');
+        $db->exec('CREATE INDEX IF NOT EXISTS idx_songs_year ON songs(year);');
+    }
 
     // email verification tokens
     $db->exec(

@@ -8,6 +8,8 @@
   const languageInput = form.querySelector('input[name="language"]');
   const albumInput = form.querySelector('input[name="album"]');
   const coverInput = form.querySelector('input[name="cover_url"]');
+  const genreInput = form.querySelector('input[name="genre"]');
+  const yearInput = form.querySelector('input[name="year"]');
   const coverImg = document.getElementById('coverPreview');
   const coverPlaceholder = document.getElementById('coverPlaceholder');
   const metaBadge = document.getElementById('metaBadge');
@@ -201,7 +203,9 @@
     const langEmpty = languageInput && !languageInput.value.trim();
     const albumEmpty = albumInput && !albumInput.value.trim();
     const coverEmpty = coverInput && !coverInput.value.trim();
-    if (!langEmpty && !albumEmpty && !coverEmpty) return;
+    const genreEmpty = genreInput && !genreInput.value.trim();
+    const yearEmpty = yearInput && !yearInput.value.trim();
+    if (!langEmpty && !albumEmpty && !coverEmpty && !genreEmpty && !yearEmpty) return;
 
     setMetaBadge('Fetching cover…', 'info');
     try {
@@ -216,6 +220,8 @@
         if (langEmpty && meta.language && languageInput) languageInput.value = meta.language;
         if (albumEmpty && meta.album && albumInput) albumInput.value = meta.album;
         if (coverEmpty && meta.cover_url && coverInput) coverInput.value = meta.cover_url;
+        if (genreEmpty && meta.genre && genreInput) genreInput.value = meta.genre;
+        if (yearEmpty && meta.year && yearInput) yearInput.value = String(meta.year);
         if (coverInput?.value) setCoverPreview(coverInput.value);
         setMetaBadge(`Meta: ${meta.source || 'found'}`, 'success');
       } else {
@@ -321,6 +327,8 @@
           if (coverInput && cover) coverInput.value = cover;
           if (albumInput && album && !albumInput.value.trim()) albumInput.value = album;
           if (languageInput && c.language && !languageInput.value.trim()) languageInput.value = c.language;
+          if (genreInput && c.genre && !genreInput.value.trim()) genreInput.value = c.genre;
+          if (yearInput && c.year && !yearInput.value.trim()) yearInput.value = String(c.year);
           setCoverPreview(cover);
           setMetaBadge(`Meta: picked (${c.source || 'cover'})`, 'primary');
           if (coverModalEl && window.bootstrap) {
