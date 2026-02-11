@@ -24,10 +24,10 @@
   $activeAdmin = $isAdmin;
   $activeLogin = $currentRoute === '/login';
 
-  $mobileHome = $activeHome || $activeTop || $activeLanguages || $activeLiked;
   $mobileSongs = $activeSongs;
   $mobileArtists = $activeArtists;
-  $mobileProfile = $activeAccount || $activeLogin || $activeUsage || $activeFavorites || $activePlaylists || $activeRecent || $activeAdmin;
+  $mobileProfile = $activeAccount || $activeLogin;
+  $mobileHome = $activeHome || $activeTop || $activeLanguages || $activeLiked || (!$mobileSongs && !$mobileArtists && !$mobileProfile);
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
