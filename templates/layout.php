@@ -10,6 +10,7 @@
   $currentRoute = '/' . ltrim($currentRoute, '/');
   $isHome = $currentRoute === '/';
   $isSongs = $currentRoute === '/songs';
+  $isArtists = $currentRoute === '/artists';
   $isAccount = $currentRoute === '/account';
 ?>
 <!doctype html>
@@ -100,6 +101,10 @@
         <a class="nav-link <?= $isSongs ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/songs">
           <div><i class="bi bi-music-note-list" aria-hidden="true"></i></div>
           <div class="small">Songs</div>
+        </a>
+        <a class="nav-link <?= $isArtists ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/artists">
+          <div><i class="bi bi-person-lines-fill" aria-hidden="true"></i></div>
+          <div class="small">Artists</div>
         </a>
         <a class="nav-link <?= $isAccount ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=<?= $user ? '/account' : '/login' ?>">
           <div><i class="bi bi-person-circle" aria-hidden="true"></i></div>
