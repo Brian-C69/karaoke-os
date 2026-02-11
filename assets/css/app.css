@@ -32,9 +32,19 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; }
 
 @media (max-width: 991.98px) {
   /* Override Bootstrap's .py-4 (uses !important) so content can scroll above the fixed bottom nav. */
-  main.container { padding-bottom: calc(7.75rem + env(safe-area-inset-bottom)) !important; }
-  .mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+  main.container {
+    padding-bottom: calc(7.75rem + constant(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(7.75rem + env(safe-area-inset-bottom)) !important;
+  }
+  .mobile-bottom-nav {
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
   .mobile-bottom-nav .nav-link { padding: .35rem .25rem; }
-  .mobile-bottom-nav .nav-link i { font-size: 1.2rem; }
+  .mobile-bottom-nav .nav-link i { font-size: 1.2rem; line-height: 1; display: inline-block; }
   .mobile-bottom-nav .nav-link.active { background: rgba(var(--bs-primary-rgb), .12); color: var(--bs-primary); }
 }

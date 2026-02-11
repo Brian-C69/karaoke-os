@@ -33,7 +33,7 @@
 <html lang="en" data-bs-theme="light">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title><?= e($pageTitle) ?> · Karaoke OS</title>
   <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
   <meta name="theme-color" content="#212529">
