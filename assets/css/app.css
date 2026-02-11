@@ -26,7 +26,8 @@ body { font-family: var(--bs-body-font-family); }
 }
 
 @media (max-width: 991.98px) {
-  main.container { padding-bottom: 5.25rem; }
+  main.container { padding-bottom: calc(6.75rem + env(safe-area-inset-bottom)); }
+  .mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
   .mobile-bottom-nav .nav-link { padding: .35rem .25rem; }
   .mobile-bottom-nav .nav-link i { font-size: 1.2rem; }
   .mobile-bottom-nav .nav-link.active { background: rgba(var(--bs-primary-rgb), .12); color: var(--bs-primary); }
