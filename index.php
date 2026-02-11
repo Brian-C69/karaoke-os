@@ -912,24 +912,58 @@ switch ($route) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             csrf_verify();
             $action = (string)($_POST['action'] ?? '');
-            if ($action === 'cache_external_image') {
-                $remote = trim((string)($artist['image_url'] ?? ''));
-                if ($remote === '' || !is_safe_external_url($remote)) {
-                    flash('info', 'No external Image URL to cache.');
-                    redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+            if ($action === 'fetch_artist_image') {
+                $name = trim((string)($artist['name'] ?? ''));
+                $current = trim((string)($artist['image_url'] ?? ''));
+                $currentIsExternal = $current !== '' && is_safe_external_url($current);
+
+                $remote = $currentIsExternal ? $current : null;
+                $mbid = null;
+
+                if ($remote === null) {
+                    try {
+                        $meta = lookup_artist_image($name);
+                        if (is_array($meta)) {
+                            $remote = !empty($meta['image_url']) ? (string)$meta['image_url'] : null;
+                            $mbid = !empty($meta['musicbrainz_id']) ? (string)$meta['musicbrainz_id'] : null;
+                        }
+                    } catch (Throwable $e) {
+                        // ignore
+                    }
                 }
 
-                try {
-                    $cached = cache_artist_image_url((int)$artist['id'], (string)($artist['name'] ?? ''), $remote);
-                    if ($cached) {
-                        $stmt = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
-                        $stmt->execute([':img' => $cached, ':u' => now_db(), ':id' => (int)$artist['id']]);
-                        flash('success', 'Artist image cached locally.');
-                    } else {
-                        flash('danger', 'Could not cache artist image.');
+                $cached = null;
+                if (is_string($remote) && $remote !== '' && is_safe_external_url($remote)) {
+                    try {
+                        $cached = cache_artist_image_url((int)$artist['id'], $name, $remote);
+                    } catch (Throwable $e) {
+                        $cached = null;
                     }
-                } catch (Throwable $e) {
-                    flash('danger', 'Could not cache artist image.');
+                }
+
+                $didUpdate = false;
+                if ($cached) {
+                    $stmt = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                    $stmt->execute([':img' => $cached, ':u' => now_db(), ':id' => (int)$artist['id']]);
+                    $didUpdate = true;
+                }
+                if (is_string($mbid) && trim($mbid) !== '') {
+                    $stmt = $db->prepare(
+                        'UPDATE artists
+                         SET musicbrainz_id = CASE WHEN musicbrainz_id IS NULL OR TRIM(musicbrainz_id) = \'\' THEN :mb ELSE musicbrainz_id END,
+                             updated_at = :u
+                         WHERE id = :id'
+                    );
+                    $stmt->execute([':mb' => $mbid, ':u' => now_db(), ':id' => (int)$artist['id']]);
+                    $didUpdate = true;
+                }
+
+                if ($cached) {
+                    flash('success', 'Artist image fetched and cached locally.');
+                } elseif ($didUpdate) {
+                    flash('info', 'No image found, but metadata was updated.');
+                } else {
+                    flash('danger', 'Could not fetch artist image.');
                 }
 
                 redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
