@@ -32,7 +32,6 @@
           <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
           <button class="btn btn-primary w-100" <?= !empty($userFull['email_verified_at']) ? 'disabled' : '' ?>><i class="bi bi-send me-1" aria-hidden="true"></i>Send verification email</button>
         </form>
-        <div class="text-muted small mt-2">If mail isn’t configured, dev mode may show the link in a banner.</div>
       </div>
     </div>
   </div>
