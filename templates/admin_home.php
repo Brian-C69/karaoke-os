@@ -44,4 +44,12 @@
       </div>
     </a>
   </div>
+  <div class="col-md-4">
+    <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/tools">
+      <div class="card-body">
+        <div class="fw-semibold"><i class="bi bi-tools me-2" aria-hidden="true"></i>Tools</div>
+        <div class="text-muted small">Import/export and backups.</div>
+      </div>
+    </a>
+  </div>
 </div>

@@ -1342,6 +1342,200 @@ function find_song_duplicates(PDO $db, ?int $excludeId, string $title, string $a
     return $rows ?: [];
 }
 
+function admin_import_songs_csv(PDO $db, string $csvTmpPath, bool $lookupMeta = false): array
+{
+    $csvTmpPath = trim($csvTmpPath);
+    if ($csvTmpPath === '' || !is_file($csvTmpPath)) {
+        return ['ok' => false];
+    }
+
+    $fp = fopen($csvTmpPath, 'rb');
+    if ($fp === false) {
+        return ['ok' => false];
+    }
+
+    $inserted = 0;
+    $skipped = 0;
+    $errors = 0;
+    $errorMessages = [];
+    $lookupMeta = (bool)$lookupMeta;
+
+    $headerMap = null;
+    $rowNum = 0;
+
+    $db->beginTransaction();
+    try {
+        while (($row = fgetcsv($fp)) !== false) {
+            $rowNum++;
+            if (!is_array($row)) continue;
+
+            $row = array_map(static function ($v): string {
+                $v = is_string($v) ? $v : '';
+                $v = trim($v);
+                $v = preg_replace('/^\xEF\xBB\xBF/', '', $v); // strip UTF-8 BOM
+                return $v;
+            }, $row);
+
+            // Skip blank lines.
+            $nonEmpty = array_filter($row, static fn ($v) => $v !== '');
+            if (!$nonEmpty) {
+                continue;
+            }
+
+            // Detect header row.
+            if ($headerMap === null) {
+                $lower = array_map(static fn ($v) => strtolower(trim((string)$v)), $row);
+                if (in_array('title', $lower, true) && in_array('artist', $lower, true)) {
+                    $headerMap = [];
+                    foreach ($lower as $i => $name) {
+                        if ($name === '') continue;
+                        $headerMap[$name] = (int)$i;
+                    }
+                    continue;
+                }
+                $headerMap = [];
+            }
+
+            $get = static function (array $r, array $map, array $keys, int $fallbackIndex = -1): string {
+                foreach ($keys as $k) {
+                    $k = strtolower((string)$k);
+                    if (isset($map[$k]) && isset($r[(int)$map[$k]])) {
+                        return (string)$r[(int)$map[$k]];
+                    }
+                }
+                return ($fallbackIndex >= 0 && isset($r[$fallbackIndex])) ? (string)$r[$fallbackIndex] : '';
+            };
+
+            $title = $get($row, $headerMap, ['title'], 0);
+            $artist = $get($row, $headerMap, ['artist'], 1);
+            $drive = $get($row, $headerMap, ['drive', 'drive_url', 'url', 'link'], 2);
+            $fileId = $get($row, $headerMap, ['drive_file_id', 'file_id'], -1);
+            $language = $get($row, $headerMap, ['language'], 3);
+            $album = $get($row, $headerMap, ['album'], 4);
+            $coverUrl = $get($row, $headerMap, ['cover_url', 'cover'], 5);
+            $genre = $get($row, $headerMap, ['genre'], 6);
+            $yearRaw = $get($row, $headerMap, ['year'], 7);
+            $isActiveRaw = $get($row, $headerMap, ['is_active', 'active'], 8);
+
+            $title = trim($title);
+            $artist = trim($artist);
+            $drive = trim($drive);
+            $fileId = trim($fileId);
+
+            if ($title === '' || $artist === '') {
+                $errors++;
+                $errorMessages[] = "Row {$rowNum}: missing title/artist.";
+                continue;
+            }
+
+            $driveUrl = null;
+            $driveFileId = null;
+
+            if ($fileId !== '') {
+                $driveFileId = drive_extract_file_id($fileId) ?? $fileId;
+            } elseif ($drive !== '') {
+                $driveFileId = drive_extract_file_id($drive);
+            }
+
+            if ($drive !== '' && is_safe_external_url($drive)) {
+                $driveUrl = $drive;
+            } elseif ($driveFileId !== null && $driveFileId !== '') {
+                $driveUrl = drive_view_url($driveFileId);
+            }
+
+            if (!$driveUrl || !is_safe_external_url($driveUrl)) {
+                $errors++;
+                $errorMessages[] = "Row {$rowNum}: invalid drive/url.";
+                continue;
+            }
+
+            $isActive = 1;
+            $flag = strtolower(trim((string)$isActiveRaw));
+            if ($flag !== '') {
+                if (in_array($flag, ['0', 'false', 'no', 'n'], true)) $isActive = 0;
+            }
+
+            $year = null;
+            $yearRaw = trim((string)$yearRaw);
+            if ($yearRaw !== '' && preg_match('/^[0-9]{4}$/', $yearRaw)) {
+                $year = (int)$yearRaw;
+            }
+
+            $coverUrl = trim((string)$coverUrl);
+            if ($coverUrl !== '' && !is_safe_external_url($coverUrl)) {
+                $coverUrl = '';
+            }
+
+            $dupes = find_song_duplicates($db, null, $title, $artist, $driveFileId, $driveUrl);
+            if ($dupes) {
+                $skipped++;
+                continue;
+            }
+
+            if ($lookupMeta && ($album === '' || $coverUrl === '' || $language === '' || $genre === '' || $year === null)) {
+                try {
+                    $meta = lookup_song_metadata($title, $artist);
+                    if (is_array($meta)) {
+                        if ($album === '' && !empty($meta['album'])) $album = (string)$meta['album'];
+                        if ($coverUrl === '' && !empty($meta['cover_url'])) $coverUrl = (string)$meta['cover_url'];
+                        if ($language === '' && !empty($meta['language'])) $language = (string)$meta['language'];
+                        if ($genre === '' && !empty($meta['genre'])) $genre = (string)$meta['genre'];
+                        if ($year === null && !empty($meta['year']) && is_numeric($meta['year'])) $year = (int)$meta['year'];
+                    }
+                } catch (Throwable $e) {
+                    // ignore
+                }
+            }
+
+            $now = now_db();
+            $artistRow = upsert_artist($db, $artist);
+            $artistId = is_array($artistRow) ? (int)($artistRow['id'] ?? 0) : 0;
+            if ($artistId <= 0) $artistId = 0;
+
+            try {
+                $stmt = $db->prepare(
+                    'INSERT INTO songs (title, artist, artist_id, language, album, cover_url, genre, year, drive_url, drive_file_id, is_active, created_at, updated_at)
+                     VALUES (:t, :a, :aid, :l, :al, :c, :g, :y, :d, :fid, :ia, :ca, :ua)'
+                );
+                $stmt->execute([
+                    ':t' => $title,
+                    ':a' => $artist,
+                    ':aid' => $artistId > 0 ? $artistId : null,
+                    ':l' => trim((string)$language) !== '' ? trim((string)$language) : null,
+                    ':al' => trim((string)$album) !== '' ? trim((string)$album) : null,
+                    ':c' => $coverUrl !== '' ? $coverUrl : null,
+                    ':g' => trim((string)$genre) !== '' ? trim((string)$genre) : null,
+                    ':y' => $year,
+                    ':d' => $driveUrl,
+                    ':fid' => $driveFileId !== null && $driveFileId !== '' ? $driveFileId : null,
+                    ':ia' => $isActive,
+                    ':ca' => $now,
+                    ':ua' => $now,
+                ]);
+                $inserted++;
+            } catch (Throwable $e) {
+                $errors++;
+                $errorMessages[] = "Row {$rowNum}: insert failed.";
+            }
+        }
+
+        $db->commit();
+    } catch (Throwable $e) {
+        $db->rollBack();
+        fclose($fp);
+        return ['ok' => false];
+    }
+
+    fclose($fp);
+    return [
+        'ok' => true,
+        'inserted' => $inserted,
+        'skipped' => $skipped,
+        'errors' => $errors,
+        'error_messages' => $errorMessages,
+    ];
+}
+
 function admin_delete_song(PDO $db, int $id): void
 {
     $stmt = $db->prepare('UPDATE songs SET is_active = 0, updated_at = :ua WHERE id = :id');

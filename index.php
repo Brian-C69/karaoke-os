@@ -870,6 +870,173 @@ switch ($route) {
         render('admin_home');
         break;
 
+    case '/admin/tools':
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_verify();
+            $action = (string)($_POST['action'] ?? '');
+            if ($action === 'import_songs_csv') {
+                $file = $_FILES['csv'] ?? null;
+                if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                    flash('danger', 'Upload a CSV file.');
+                    redirect('/?r=/admin/tools');
+                }
+                $tmp = (string)($file['tmp_name'] ?? '');
+                $size = (int)($file['size'] ?? 0);
+                if ($tmp === '' || $size <= 0) {
+                    flash('danger', 'CSV upload is empty.');
+                    redirect('/?r=/admin/tools');
+                }
+                if ($size > 10_000_000) {
+                    flash('danger', 'CSV is too large (max 10MB).');
+                    redirect('/?r=/admin/tools');
+                }
+
+                $lookupMeta = !empty($_POST['lookup_meta']);
+                $res = admin_import_songs_csv($db, $tmp, $lookupMeta);
+                if (!empty($res['ok'])) {
+                    $msg = sprintf(
+                        'Import complete: %d added, %d duplicates skipped, %d errors.',
+                        (int)($res['inserted'] ?? 0),
+                        (int)($res['skipped'] ?? 0),
+                        (int)($res['errors'] ?? 0)
+                    );
+                    flash('success', $msg);
+                    if (!empty($res['error_messages']) && is_array($res['error_messages'])) {
+                        flash('danger', 'Import errors: ' . implode(' ; ', array_slice($res['error_messages'], 0, 6)));
+                    }
+                } else {
+                    flash('danger', 'Import failed.');
+                }
+                redirect('/?r=/admin/tools');
+            }
+
+            flash('danger', 'Unknown action.');
+            redirect('/?r=/admin/tools');
+        }
+        $pageTitle = 'Admin · Tools';
+        render('admin_tools');
+        break;
+
+    case '/admin/export-songs':
+        require_admin();
+        header('Content-Type: text/csv; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: attachment; filename="karaoke_songs_' . date('Ymd_His') . '.csv"');
+        echo "\xEF\xBB\xBF";
+        $out = fopen('php://output', 'wb');
+        fputcsv($out, ['id', 'title', 'artist', 'artist_id', 'language', 'album', 'cover_url', 'genre', 'year', 'drive_url', 'drive_file_id', 'is_active', 'created_at', 'updated_at']);
+        $stmt = $db->query('SELECT id, title, artist, artist_id, language, album, cover_url, genre, year, drive_url, drive_file_id, is_active, created_at, updated_at FROM songs ORDER BY id ASC');
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            fputcsv($out, [
+                (int)($r['id'] ?? 0),
+                (string)($r['title'] ?? ''),
+                (string)($r['artist'] ?? ''),
+                $r['artist_id'] === null ? '' : (int)$r['artist_id'],
+                (string)($r['language'] ?? ''),
+                (string)($r['album'] ?? ''),
+                (string)($r['cover_url'] ?? ''),
+                (string)($r['genre'] ?? ''),
+                $r['year'] === null ? '' : (int)$r['year'],
+                (string)($r['drive_url'] ?? ''),
+                (string)($r['drive_file_id'] ?? ''),
+                (int)($r['is_active'] ?? 0),
+                (string)($r['created_at'] ?? ''),
+                (string)($r['updated_at'] ?? ''),
+            ]);
+        }
+        fclose($out);
+        exit;
+
+    case '/admin/export-artists':
+        require_admin();
+        header('Content-Type: text/csv; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: attachment; filename="karaoke_artists_' . date('Ymd_His') . '.csv"');
+        echo "\xEF\xBB\xBF";
+        $out = fopen('php://output', 'wb');
+        fputcsv($out, ['id', 'name', 'image_url', 'musicbrainz_id', 'created_at', 'updated_at']);
+        $stmt = $db->query('SELECT id, name, image_url, musicbrainz_id, created_at, updated_at FROM artists ORDER BY id ASC');
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            fputcsv($out, [
+                (int)($r['id'] ?? 0),
+                (string)($r['name'] ?? ''),
+                (string)($r['image_url'] ?? ''),
+                (string)($r['musicbrainz_id'] ?? ''),
+                (string)($r['created_at'] ?? ''),
+                (string)($r['updated_at'] ?? ''),
+            ]);
+        }
+        fclose($out);
+        exit;
+
+    case '/admin/export-plays':
+        require_admin();
+        header('Content-Type: text/csv; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: attachment; filename="karaoke_plays_' . date('Ymd_His') . '.csv"');
+        echo "\xEF\xBB\xBF";
+        $out = fopen('php://output', 'wb');
+        fputcsv($out, ['id', 'played_at', 'ip', 'user_agent', 'user_id', 'username', 'song_id', 'title', 'artist']);
+        $stmt = $db->query(
+            'SELECT
+                p.id,
+                p.played_at,
+                p.ip,
+                p.user_agent,
+                u.id AS user_id,
+                u.username,
+                s.id AS song_id,
+                s.title,
+                s.artist
+             FROM plays p
+             INNER JOIN users u ON u.id = p.user_id
+             INNER JOIN songs s ON s.id = p.song_id
+             ORDER BY p.id ASC'
+        );
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            fputcsv($out, [
+                (int)($r['id'] ?? 0),
+                (string)($r['played_at'] ?? ''),
+                (string)($r['ip'] ?? ''),
+                (string)($r['user_agent'] ?? ''),
+                (int)($r['user_id'] ?? 0),
+                (string)($r['username'] ?? ''),
+                (int)($r['song_id'] ?? 0),
+                (string)($r['title'] ?? ''),
+                (string)($r['artist'] ?? ''),
+            ]);
+        }
+        fclose($out);
+        exit;
+
+    case '/admin/backup-db':
+        require_admin();
+        $tmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'karaoke_os_backup_' . date('Ymd_His') . '.sqlite';
+        $tmp = str_replace('\\', '/', $tmp);
+        $tmpSql = str_replace("'", "''", $tmp);
+        try {
+            $bdb = new PDO('sqlite:' . DB_PATH);
+            $bdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $bdb->exec("VACUUM INTO '{$tmpSql}';");
+        } catch (Throwable $e) {
+            flash('danger', 'Could not create DB backup.');
+            redirect('/?r=/admin/tools');
+        }
+        if (!is_file($tmp) || filesize($tmp) <= 0) {
+            flash('danger', 'DB backup file missing.');
+            redirect('/?r=/admin/tools');
+        }
+        header('Content-Type: application/x-sqlite3');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: attachment; filename="karaoke_backup_' . date('Ymd_His') . '.sqlite"');
+        header('Content-Length: ' . filesize($tmp));
+        register_shutdown_function(static function () use ($tmp) {
+            @unlink($tmp);
+        });
+        readfile($tmp);
+        exit;
+
     case '/admin/songs':
         require_admin();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
