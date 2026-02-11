@@ -24,3 +24,10 @@ body { font-family: var(--bs-body-font-family); }
 @media (max-width: 575.98px) {
   .playlist-create-name { max-width: 100%; }
 }
+
+@media (max-width: 991.98px) {
+  main.container { padding-bottom: 5.25rem; }
+  .mobile-bottom-nav .nav-link { padding: .35rem .25rem; }
+  .mobile-bottom-nav .nav-link i { font-size: 1.2rem; }
+  .mobile-bottom-nav .nav-link.active { background: rgba(var(--bs-primary-rgb), .12); color: var(--bs-primary); }
+}

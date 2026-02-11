@@ -1,7 +1,16 @@
 <?php /** @var array $userFull */ ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h4 m-0"><i class="bi bi-person-circle me-2" aria-hidden="true"></i>Account</h1>
-  <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
+  <div class="d-flex align-items-center gap-2">
+    <button type="button" class="btn btn-outline-secondary btn-sm d-lg-none" data-theme-toggle title="Toggle theme" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+    </button>
+    <form method="post" action="<?= e(APP_BASE) ?>/?r=/logout" class="m-0 d-lg-none">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Logout</button>
+    </form>
+    <a class="btn btn-outline-secondary btn-sm" href="<?= e(APP_BASE) ?>/?r=/"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
+  </div>
 </div>
 
 <div class="card shadow-sm mb-3">

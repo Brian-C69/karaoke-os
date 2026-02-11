@@ -43,13 +43,15 @@
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('themeToggle');
-    updateToggle(btn, current);
-    btn?.addEventListener('click', () => {
+    const buttons = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+    buttons.forEach((b) => updateToggle(b, current));
+    buttons.forEach((btn) =>
+      btn.addEventListener('click', () => {
       const now = normalize(document.documentElement.getAttribute('data-bs-theme'));
       const next = now === 'dark' ? 'light' : 'dark';
       const applied = setTheme(next);
-      updateToggle(btn, applied);
-    });
+      buttons.forEach((b) => updateToggle(b, applied));
+      })
+    );
   });
 })();

@@ -4,6 +4,14 @@
 /** @var array|null $user */
 /** @var string $templateFile */
 ?>
+<?php
+  $currentRoute = $_GET['r'] ?? '/';
+  if (!is_string($currentRoute)) $currentRoute = '/';
+  $currentRoute = '/' . ltrim($currentRoute, '/');
+  $isHome = $currentRoute === '/';
+  $isSongs = $currentRoute === '/songs';
+  $isAccount = $currentRoute === '/account';
+?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
 <head>
@@ -23,7 +31,7 @@
   <link href="<?= e(APP_BASE) ?>/assets/css/app.css" rel="stylesheet">
 </head>
 <body class="bg-body-tertiary" data-auth="<?= $user ? '1' : '0' ?>">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark d-none d-lg-flex">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="<?= e(APP_BASE) ?>/?r=/">
         <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="" width="32" height="32" class="me-2" style="object-fit:contain;">
@@ -45,7 +53,7 @@
         </ul>
         <ul class="navbar-nav">
           <li class="nav-item d-flex align-items-center me-lg-2">
-            <button type="button" class="btn btn-sm btn-outline-light" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+            <button type="button" class="btn btn-sm btn-outline-light" data-theme-toggle aria-label="Toggle theme" title="Toggle theme">
               <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
             </button>
           </li>
@@ -81,7 +89,27 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="<?= e(APP_BASE) ?>/assets/js/song-actions.js"></script>
   <script src="<?= e(APP_BASE) ?>/assets/js/no-right-click.js"></script>
-  <footer class="border-top py-3">
+
+  <nav class="mobile-bottom-nav d-lg-none fixed-bottom border-top bg-body">
+    <div class="container">
+      <div class="nav nav-pills nav-fill py-2">
+        <a class="nav-link <?= $isHome ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/">
+          <div><i class="bi bi-house" aria-hidden="true"></i></div>
+          <div class="small">Home</div>
+        </a>
+        <a class="nav-link <?= $isSongs ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=/songs">
+          <div><i class="bi bi-music-note-list" aria-hidden="true"></i></div>
+          <div class="small">Songs</div>
+        </a>
+        <a class="nav-link <?= $isAccount ? 'active' : '' ?>" href="<?= e(APP_BASE) ?>/?r=<?= $user ? '/account' : '/login' ?>">
+          <div><i class="bi bi-person-circle" aria-hidden="true"></i></div>
+          <div class="small">Profile</div>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <footer class="border-top py-3 d-none d-lg-block">
     <div class="container small text-muted d-flex align-items-center justify-content-between">
       <div>Karaoke OS</div>
       <div>v<?= e(APP_VERSION) ?></div>
