@@ -2,7 +2,13 @@
   <div class="col-md-5 col-lg-4">
     <div class="card shadow-sm">
       <div class="card-body">
-        <h1 class="h5 mb-3"><i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>Login</h1>
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="" width="40" height="40" style="object-fit:contain;">
+          <div class="lh-sm">
+            <div class="fw-bold">Karaoke <span style="color:#db4143;">OS</span></div>
+            <div class="text-muted small">Sign in to play</div>
+          </div>
+        </div>
         <form method="post" action="<?= e(APP_BASE) ?>/?r=/login">
           <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
           <div class="mb-3">
