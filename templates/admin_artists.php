@@ -16,6 +16,21 @@ if (!in_array($sort, ['plays', 'songs', 'name', 'latest'], true)) {
       <input type="hidden" name="action" value="cache_external_images">
       <button class="btn btn-outline-primary btn-sm" type="submit"><i class="bi bi-download me-1" aria-hidden="true"></i>Cache images</button>
     </form>
+    <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/artists" class="d-inline">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="action" value="cleanup_unused_artist_images">
+      <input type="hidden" name="dry_run" value="1">
+      <button class="btn btn-outline-secondary btn-sm" type="submit" title="Preview cleanup (no delete)">
+        <i class="bi bi-broom me-1" aria-hidden="true"></i>Preview cleanup
+      </button>
+    </form>
+    <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/artists" class="d-inline" onsubmit="return confirm('Delete unused artist image files from assets/uploads/artists/?');">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="action" value="cleanup_unused_artist_images">
+      <button class="btn btn-outline-danger btn-sm" type="submit" title="Delete unused local artist images">
+        <i class="bi bi-trash3 me-1" aria-hidden="true"></i>Cleanup images
+      </button>
+    </form>
     <form method="get" action="<?= e(APP_BASE) ?>/" class="d-flex align-items-center gap-2">
       <input type="hidden" name="r" value="/admin/artists">
       <select class="form-select form-select-sm" name="sort" onchange="this.form.submit()">

@@ -887,6 +887,18 @@ switch ($route) {
             if ($action === 'cache_external_images') {
                 $res = cache_external_artist_images($db, 25);
                 flash('success', sprintf('Cached %d/%d artist images.', (int)($res['cached'] ?? 0), (int)($res['attempted'] ?? 0)));
+            } elseif ($action === 'cleanup_unused_artist_images') {
+                $dryRun = !empty($_POST['dry_run']);
+                $res = cleanup_unused_artist_uploads($db, $dryRun);
+                if (!empty($res['ok'])) {
+                    if (!empty($res['dry_run'])) {
+                        flash('info', sprintf('Preview cleanup: would delete %d file(s) (scanned %d).', (int)($res['deleted'] ?? 0), (int)($res['scanned'] ?? 0)));
+                    } else {
+                        flash('success', sprintf('Cleanup complete: deleted %d file(s) (scanned %d).', (int)($res['deleted'] ?? 0), (int)($res['scanned'] ?? 0)));
+                    }
+                } else {
+                    flash('danger', 'Cleanup failed.');
+                }
             }
             redirect('/?r=/admin/artists');
         }
@@ -973,6 +985,139 @@ switch ($route) {
                 }
 
                 redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+            }
+            if ($action === 'force_refresh_artist_image') {
+                $name = trim((string)($artist['name'] ?? ''));
+                $deleted = 0;
+                try {
+                    $deleted = purge_cached_artist_image_files((int)$artist['id']);
+                } catch (Throwable $e) {
+                    $deleted = 0;
+                }
+
+                $remote = null;
+                $mbid = null;
+                try {
+                    $meta = lookup_artist_image($name);
+                    if (is_array($meta)) {
+                        $remote = !empty($meta['image_url']) ? (string)$meta['image_url'] : null;
+                        $mbid = !empty($meta['musicbrainz_id']) ? (string)$meta['musicbrainz_id'] : null;
+                    }
+                } catch (Throwable $e) {
+                    // ignore
+                }
+
+                $cached = null;
+                if (is_string($remote) && $remote !== '' && is_safe_external_url($remote)) {
+                    try {
+                        $cached = cache_artist_image_url((int)$artist['id'], $name, $remote);
+                    } catch (Throwable $e) {
+                        $cached = null;
+                    }
+                }
+
+                $didUpdate = false;
+                if ($cached) {
+                    $stmt = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                    $stmt->execute([':img' => $cached, ':u' => now_db(), ':id' => (int)$artist['id']]);
+                    $didUpdate = true;
+                }
+                if (is_string($mbid) && trim($mbid) !== '') {
+                    $stmt = $db->prepare(
+                        'UPDATE artists
+                         SET musicbrainz_id = CASE WHEN musicbrainz_id IS NULL OR TRIM(musicbrainz_id) = \'\' THEN :mb ELSE musicbrainz_id END,
+                             updated_at = :u
+                         WHERE id = :id'
+                    );
+                    $stmt->execute([':mb' => $mbid, ':u' => now_db(), ':id' => (int)$artist['id']]);
+                    $didUpdate = true;
+                }
+
+                if ($cached) {
+                    flash('success', sprintf('Artist image refreshed (purged %d cached file(s)).', $deleted));
+                } elseif ($didUpdate) {
+                    flash('info', sprintf('No image found, but metadata was updated (purged %d cached file(s)).', $deleted));
+                } else {
+                    flash('danger', sprintf('Could not refresh artist image (purged %d cached file(s)).', $deleted));
+                }
+
+                redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+            }
+            if ($action === 'rename_merge_artist') {
+                $newName = trim((string)($_POST['artist_new_name'] ?? ''));
+                if ($newName === '') {
+                    flash('danger', 'New artist name is required.');
+                    redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+                }
+
+                $oldId = (int)$artist['id'];
+                $oldName = (string)($artist['name'] ?? '');
+                $now = now_db();
+
+                // If the name already exists, merge into it (unless it's the same artist).
+                $target = null;
+                $stmt = $db->prepare('SELECT id, name, image_url FROM artists WHERE name = :n COLLATE NOCASE LIMIT 1');
+                $stmt->execute([':n' => $newName]);
+                $row = $stmt->fetch();
+                if (is_array($row)) {
+                    $target = $row;
+                }
+
+                $db->beginTransaction();
+                try {
+                    if (is_array($target) && (int)($target['id'] ?? 0) > 0 && (int)$target['id'] !== $oldId) {
+                        $targetId = (int)$target['id'];
+                        $targetName = (string)($target['name'] ?? $newName);
+
+                        // Move songs to the target artist.
+                        $u = $db->prepare(
+                            'UPDATE songs
+                             SET artist_id = :tid, artist = :tn, updated_at = :u
+                             WHERE artist_id = :oid
+                                OR ((artist_id IS NULL OR artist_id = 0) AND lower(artist) = lower(:on))'
+                        );
+                        $u->execute([':tid' => $targetId, ':tn' => $targetName, ':u' => $now, ':oid' => $oldId, ':on' => $oldName]);
+
+                        // Prefer keeping an existing target image; only copy if missing.
+                        $srcImg = trim((string)($artist['image_url'] ?? ''));
+                        $tgtImg = trim((string)($target['image_url'] ?? ''));
+                        if ($tgtImg === '' && $srcImg !== '') {
+                            $u2 = $db->prepare('UPDATE artists SET image_url = :img, updated_at = :u WHERE id = :id');
+                            $u2->execute([':img' => $srcImg, ':u' => $now, ':id' => $targetId]);
+                        } else {
+                            $touch = $db->prepare('UPDATE artists SET updated_at = :u WHERE id = :id');
+                            $touch->execute([':u' => $now, ':id' => $targetId]);
+                        }
+
+                        // Remove the source artist row.
+                        $d = $db->prepare('DELETE FROM artists WHERE id = :id');
+                        $d->execute([':id' => $oldId]);
+
+                        $db->commit();
+                        flash('success', sprintf('Merged "%s" into "%s".', $oldName, $targetName));
+                        redirect('/?r=/admin/artist-edit&id=' . $targetId);
+                    }
+
+                    // Rename (or casing change).
+                    $u = $db->prepare('UPDATE artists SET name = :n, updated_at = :u WHERE id = :id');
+                    $u->execute([':n' => $newName, ':u' => $now, ':id' => $oldId]);
+
+                    $u2 = $db->prepare(
+                        'UPDATE songs
+                         SET artist = :n, updated_at = :u
+                         WHERE artist_id = :id
+                            OR ((artist_id IS NULL OR artist_id = 0) AND lower(artist) = lower(:on))'
+                    );
+                    $u2->execute([':n' => $newName, ':u' => $now, ':id' => $oldId, ':on' => $oldName]);
+
+                    $db->commit();
+                    flash('success', 'Artist renamed.');
+                    redirect('/?r=/admin/artist-edit&id=' . $oldId);
+                } catch (Throwable $e) {
+                    $db->rollBack();
+                    flash('danger', 'Could not rename/merge artist (name may already exist).');
+                    redirect('/?r=/admin/artist-edit&id=' . (int)$artist['id']);
+                }
             }
 
             $remove = !empty($_POST['remove_image']);

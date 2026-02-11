@@ -215,3 +215,118 @@ function cache_artist_image_url(int $artistId, string $artistName, string $remot
 
     return 'assets/uploads/artists/auto/' . $base . '.' . $ext;
 }
+
+function purge_cached_artist_image_files(int $artistId): int
+{
+    $artistId = (int)$artistId;
+    if ($artistId <= 0) {
+        return 0;
+    }
+
+    $uploadsDir = APP_ROOT . '/assets/uploads/artists/auto';
+    if (!is_dir($uploadsDir)) {
+        return 0;
+    }
+
+    $base = sprintf('artist_%d', $artistId);
+    $deleted = 0;
+
+    foreach (['jpg', 'png', 'webp', 'gif'] as $ext) {
+        $p = $uploadsDir . '/' . $base . '.' . $ext;
+        if (is_file($p)) {
+            if (@unlink($p)) $deleted++;
+        }
+    }
+
+    $bin = $uploadsDir . '/' . $base . '.bin';
+    if (is_file($bin)) {
+        if (@unlink($bin)) $deleted++;
+    }
+
+    $binTmp = $uploadsDir . '/' . $base . '.bin.tmp';
+    if (is_file($binTmp)) {
+        if (@unlink($binTmp)) $deleted++;
+    }
+
+    return $deleted;
+}
+
+function cleanup_unused_artist_uploads(PDO $db, bool $dryRun = true): array
+{
+    $baseDir = APP_ROOT . '/assets/uploads/artists';
+    if (!is_dir($baseDir)) {
+        return ['ok' => true, 'scanned' => 0, 'referenced' => 0, 'deleted' => 0, 'kept' => 0];
+    }
+
+    $referenced = [];
+    $stmt = $db->query('SELECT image_url FROM artists WHERE image_url IS NOT NULL AND TRIM(image_url) <> \'\'');
+    foreach ($stmt->fetchAll() as $r) {
+        $url = trim((string)($r['image_url'] ?? ''));
+        if ($url === '' || is_safe_external_url($url)) {
+            continue;
+        }
+        $rel = str_replace('\\', '/', ltrim($url, '/'));
+        if ($rel === '') {
+            continue;
+        }
+        $abs = APP_ROOT . '/' . $rel;
+        $referenced[$abs] = true;
+    }
+
+    $scanned = 0;
+    $deleted = 0;
+    $kept = 0;
+
+    $it = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($it as $file) {
+        /** @var SplFileInfo $file */
+        if (!$file->isFile()) continue;
+
+        $abs = str_replace('\\', '/', $file->getPathname());
+        $scanned++;
+
+        $rel = str_replace('\\', '/', substr($abs, strlen(str_replace('\\', '/', APP_ROOT)) + 1));
+        if (!str_starts_with($rel, 'assets/uploads/artists/')) {
+            $kept++;
+            continue;
+        }
+
+        $name = $file->getFilename();
+        if (str_starts_with($name, '.')) {
+            $kept++;
+            continue;
+        }
+
+        // Safety: only delete our own artist image patterns.
+        if (!preg_match('/^artist_\\d+(?:_[a-f0-9]{6,})?\\.(?:jpg|png|webp|gif|bin|tmp)$/i', $name)) {
+            $kept++;
+            continue;
+        }
+
+        if (isset($referenced[$abs])) {
+            $kept++;
+            continue;
+        }
+
+        if (!$dryRun) {
+            if (@unlink($abs)) {
+                $deleted++;
+            } else {
+                $kept++;
+            }
+        } else {
+            $deleted++;
+        }
+    }
+
+    return [
+        'ok' => true,
+        'scanned' => $scanned,
+        'referenced' => count($referenced),
+        'deleted' => $deleted,
+        'kept' => $kept,
+        'dry_run' => $dryRun,
+    ];
+}

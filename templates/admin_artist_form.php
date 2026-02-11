@@ -4,6 +4,7 @@
   $img = $imgRaw;
   $imgIsExternal = $imgRaw !== '' && is_safe_external_url($imgRaw);
   $hasLocalImage = $imgRaw !== '' && !$imgIsExternal;
+  $hasAutoCachedImage = str_starts_with($imgRaw, 'assets/uploads/artists/auto/artist_');
   if ($img !== '' && !$imgIsExternal) $img = e(APP_BASE) . '/' . ltrim($img, '/');
 ?>
 
@@ -42,6 +43,12 @@
           </div>
 
           <div class="mb-3">
+            <label class="form-label">Rename / merge artist</label>
+            <input class="form-control" name="artist_new_name" value="" placeholder="New name (if exists, will merge)">
+            <div class="text-muted small mt-1">If the name already exists, this artist will be merged into it (songs will be re-linked).</div>
+          </div>
+
+          <div class="mb-3">
             <label class="form-label">Image URL</label>
             <input class="form-control" name="image_url" value="<?= e((string)($artist['image_url'] ?? '')) ?>" placeholder="https://...">
             <div class="text-muted small mt-1">Leave blank if you upload an image instead.</div>
@@ -63,6 +70,12 @@
             <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/artist&id=<?= (int)$artist['id'] ?>"><i class="bi bi-eye me-1" aria-hidden="true"></i>View artist</a>
             <button class="btn btn-outline-primary" type="submit" name="action" value="fetch_artist_image" title="<?= e($hasLocalImage ? 'Fetch image (MusicBrainz/Wikidata) and replace current local image' : 'Fetch image (MusicBrainz/Wikidata) and cache locally') ?>" <?= $hasLocalImage ? 'onclick="return confirm(\'Replace current local image with the fetched image?\')"' : '' ?>>
               <i class="bi bi-download me-1" aria-hidden="true"></i>Get artist image
+            </button>
+            <button class="btn btn-outline-danger" type="submit" name="action" value="force_refresh_artist_image" title="<?= e('Delete cached auto image and refetch (MusicBrainz/Wikidata)') ?>" <?= $hasAutoCachedImage ? 'onclick="return confirm(\'Force refresh artist image (purge cached auto image and refetch)?\')"' : 'disabled aria-disabled="true"' ?>>
+              <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Force refresh image
+            </button>
+            <button class="btn btn-outline-secondary" type="submit" name="action" value="rename_merge_artist" title="<?= e('Rename (or merge if name exists)') ?>" onclick="return confirm('Rename/merge this artist? This will update linked songs.')">
+              <i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Rename / Merge
             </button>
           </div>
         </form>
