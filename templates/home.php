@@ -14,7 +14,6 @@ function href_with(array $params): string {
   <div class="col-12">
     <div class="p-4 bg-body rounded shadow-sm">
       <h1 class="h4 mb-2"><i class="bi bi-compass me-2" aria-hidden="true"></i>Browse & Rankings</h1>
-      <div class="text-muted">Public can browse. Logged-in users can play, and every play is tracked.</div>
 
       <div class="home-tiles mt-3">
         <a class="home-tile tile-songs" href="<?= e(APP_BASE) ?>/?r=/songs">
