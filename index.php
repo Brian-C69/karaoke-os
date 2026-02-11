@@ -55,8 +55,12 @@ switch ($route) {
     case '/account':
         require_login();
         $pageTitle = 'Account';
+        $uid = (int)(current_user()['id'] ?? 0);
         render('account', [
             'userFull' => current_user_full($db),
+            'usageDay' => user_plays_by_day($db, $uid, 14),
+            'usageWeek' => user_plays_by_week($db, $uid, 12),
+            'usageMonth' => user_plays_by_month($db, $uid, 12),
         ]);
         break;
 
@@ -1025,7 +1029,12 @@ switch ($route) {
             redirect('/?r=/admin/users');
         }
         $pageTitle = 'Admin · Edit User';
-        render('admin_user_edit_form', ['target' => $target]);
+        render('admin_user_edit_form', [
+            'target' => $target,
+            'usageDay' => user_plays_by_day($db, $userId, 14),
+            'usageWeek' => user_plays_by_week($db, $userId, 12),
+            'usageMonth' => user_plays_by_month($db, $userId, 12),
+        ]);
         break;
 
     case '/admin/user-revoke':

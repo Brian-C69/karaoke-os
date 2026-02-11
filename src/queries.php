@@ -935,6 +935,70 @@ function plays_by_day(PDO $db, int $days): array
     return $stmt->fetchAll();
 }
 
+function user_plays_by_day(PDO $db, int $userId, int $days): array
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return [];
+    $days = max(1, min(365, (int)$days));
+    $stmt = $db->prepare(
+        'SELECT
+            substr(played_at, 1, 10) AS day,
+            COUNT(*) AS play_count
+        FROM plays
+        WHERE user_id = :u AND played_at >= datetime(\'now\', \'localtime\', :since)
+        GROUP BY substr(played_at, 1, 10)
+        ORDER BY day DESC'
+    );
+    $stmt->execute([
+        ':u' => $userId,
+        ':since' => '-' . $days . ' day',
+    ]);
+    return $stmt->fetchAll();
+}
+
+function user_plays_by_week(PDO $db, int $userId, int $weeks): array
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return [];
+    $weeks = max(1, min(260, (int)$weeks));
+    $stmt = $db->prepare(
+        'SELECT
+            strftime(\'%Y-W%W\', played_at) AS week,
+            COUNT(*) AS play_count
+        FROM plays
+        WHERE user_id = :u AND played_at >= datetime(\'now\', \'localtime\', :since)
+        GROUP BY strftime(\'%Y-W%W\', played_at)
+        ORDER BY week DESC'
+    );
+    $stmt->execute([
+        ':u' => $userId,
+        ':since' => '-' . ($weeks * 7) . ' day',
+    ]);
+    return $stmt->fetchAll();
+}
+
+function user_plays_by_month(PDO $db, int $userId, int $months): array
+{
+    $userId = (int)$userId;
+    if ($userId <= 0) return [];
+    $months = max(1, min(120, (int)$months));
+    // Approximate months range in days; grouping is by YYYY-MM so it's fine for limiting window.
+    $stmt = $db->prepare(
+        'SELECT
+            substr(played_at, 1, 7) AS month,
+            COUNT(*) AS play_count
+        FROM plays
+        WHERE user_id = :u AND played_at >= datetime(\'now\', \'localtime\', :since)
+        GROUP BY substr(played_at, 1, 7)
+        ORDER BY month DESC'
+    );
+    $stmt->execute([
+        ':u' => $userId,
+        ':since' => '-' . ($months * 31) . ' day',
+    ]);
+    return $stmt->fetchAll();
+}
+
 function admin_list_songs(PDO $db, string $view = 'active'): array
 {
     $view = strtolower(trim($view));
