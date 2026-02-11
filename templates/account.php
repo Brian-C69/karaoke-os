@@ -1,6 +1,12 @@
 <?php /** @var array $userFull */ ?>
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
   <h1 class="h4 m-0"><i class="bi bi-person-circle me-2" aria-hidden="true"></i>Profile</h1>
+  <form method="post" action="<?= e(APP_BASE) ?>/?r=/logout" class="m-0">
+    <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Logout?');">
+      <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Logout
+    </button>
+  </form>
 </div>
 
 <div class="card shadow-sm mb-3 d-lg-none">

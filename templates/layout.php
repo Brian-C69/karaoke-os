@@ -127,12 +127,6 @@
                 <i class="bi bi-person-circle me-1" aria-hidden="true"></i>Account
               </a>
             </li>
-            <li class="nav-item d-flex align-items-center">
-              <form method="post" action="<?= e(APP_BASE) ?>/?r=/logout" class="m-0">
-                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-                <button type="submit" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Logout</button>
-              </form>
-            </li>
           <?php else: ?>
             <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/login"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Login</a></li>
           <?php endif; ?>
