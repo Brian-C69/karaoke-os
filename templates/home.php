@@ -15,11 +15,53 @@ function href_with(array $params): string {
     <div class="p-4 bg-body rounded shadow-sm">
       <h1 class="h4 mb-2"><i class="bi bi-compass me-2" aria-hidden="true"></i>Browse & Rankings</h1>
       <div class="text-muted">Public can browse. Logged-in users can play, and every play is tracked.</div>
-      <div class="mt-3 d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" href="<?= e(APP_BASE) ?>/?r=/songs"><i class="bi bi-music-note-list me-1" aria-hidden="true"></i>Browse Songs</a>
-        <a class="btn btn-outline-primary" href="<?= e(APP_BASE) ?>/?r=/top"><i class="bi bi-trophy me-1" aria-hidden="true"></i>Top 100</a>
-        <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/artists"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Artists</a>
-        <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/languages"><i class="bi bi-translate me-1" aria-hidden="true"></i>Languages</a>
+
+      <div class="home-tiles mt-3">
+        <a class="home-tile tile-songs" href="<?= e(APP_BASE) ?>/?r=/songs">
+          <div class="home-tile-icon"><i class="bi bi-music-note-list" aria-hidden="true"></i></div>
+          <div class="home-tile-label">Songs</div>
+        </a>
+        <a class="home-tile tile-artists" href="<?= e(APP_BASE) ?>/?r=/artists">
+          <div class="home-tile-icon"><i class="bi bi-person-lines-fill" aria-hidden="true"></i></div>
+          <div class="home-tile-label">Artists</div>
+        </a>
+        <a class="home-tile tile-languages" href="<?= e(APP_BASE) ?>/?r=/languages">
+          <div class="home-tile-icon"><i class="bi bi-translate" aria-hidden="true"></i></div>
+          <div class="home-tile-label">Languages</div>
+        </a>
+        <a class="home-tile tile-top" href="<?= e(APP_BASE) ?>/?r=/top">
+          <div class="home-tile-icon"><i class="bi bi-trophy" aria-hidden="true"></i></div>
+          <div class="home-tile-label">Top 100</div>
+        </a>
+        <a class="home-tile tile-liked" href="<?= e(APP_BASE) ?>/?r=/liked">
+          <div class="home-tile-icon"><i class="bi bi-heart-fill" aria-hidden="true"></i></div>
+          <div class="home-tile-label">Most liked</div>
+        </a>
+
+        <?php if (!empty($user)): ?>
+          <a class="home-tile tile-recent" href="<?= e(APP_BASE) ?>/?r=/recent">
+            <div class="home-tile-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></div>
+            <div class="home-tile-label">Recent</div>
+          </a>
+          <a class="home-tile tile-favorites" href="<?= e(APP_BASE) ?>/?r=/favorites">
+            <div class="home-tile-icon"><i class="bi bi-heart" aria-hidden="true"></i></div>
+            <div class="home-tile-label">Favorites</div>
+          </a>
+          <a class="home-tile tile-playlists" href="<?= e(APP_BASE) ?>/?r=/playlists">
+            <div class="home-tile-icon"><i class="bi bi-collection-play" aria-hidden="true"></i></div>
+            <div class="home-tile-label">Playlists</div>
+          </a>
+          <a class="home-tile tile-account" href="<?= e(APP_BASE) ?>/?r=/account">
+            <div class="home-tile-icon"><i class="bi bi-person-circle" aria-hidden="true"></i></div>
+            <div class="home-tile-label">Account</div>
+          </a>
+          <?php if (($user['role'] ?? '') === 'admin'): ?>
+            <a class="home-tile tile-admin" href="<?= e(APP_BASE) ?>/?r=/admin">
+              <div class="home-tile-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></div>
+              <div class="home-tile-label">Admin</div>
+            </a>
+          <?php endif; ?>
+        <?php endif; ?>
       </div>
     </div>
   </div>
