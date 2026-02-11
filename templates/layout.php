@@ -86,6 +86,7 @@
       font-size: 1.25rem;
       line-height: 1.1;
     }
+    #pwa-splash .pwa-splash-accent { color: #db4143; }
     #pwa-splash.pwa-splash--show {
       opacity: 1;
       pointer-events: auto;
@@ -107,7 +108,7 @@
   <div id="pwa-splash" aria-hidden="true">
     <div class="pwa-splash-inner">
       <img src="<?= e(APP_BASE) ?>/assets/img/karaoke_os_icon.png" alt="">
-      <div class="pwa-splash-title">Karaoke OS</div>
+      <div class="pwa-splash-title">Karaoke <span class="pwa-splash-accent">OS</span></div>
     </div>
   </div>
   <script>

@@ -48,7 +48,19 @@ body { font-family: var(--bs-body-font-family); }
 .home-tile:hover { color: #fff; filter: brightness(1.03); }
 .home-tile:active { filter: brightness(.98); }
 .home-tile:focus-visible { outline: 3px solid rgba(13,110,253,.45); outline-offset: 3px; }
-.home-tile-icon { font-size: 1.25rem; line-height: 1; }
+.home-tile-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.16);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.home-tile-icon i { font-size: 1.15rem; line-height: 1; }
 .home-tile-label { margin-top: .4rem; font-weight: 700; font-size: .9rem; line-height: 1.1; }
 
 @media (min-width: 992px) {
