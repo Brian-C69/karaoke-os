@@ -59,13 +59,9 @@
           <div class="d-flex gap-2">
             <button class="btn btn-primary"><i class="bi bi-save me-1" aria-hidden="true"></i>Save</button>
             <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/artist&id=<?= (int)$artist['id'] ?>"><i class="bi bi-eye me-1" aria-hidden="true"></i>View artist</a>
-            <form method="post" action="<?= e(APP_BASE) ?>/?r=/admin/artist-edit&id=<?= (int)$artist['id'] ?>" class="d-inline">
-              <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-              <input type="hidden" name="action" value="cache_external_image">
-              <button class="btn btn-outline-primary" type="submit" <?= $imgIsExternal ? '' : 'disabled aria-disabled="true"' ?> title="<?= e($imgIsExternal ? 'Download and store the external image locally' : 'Set an external Image URL first') ?>">
-                <i class="bi bi-download me-1" aria-hidden="true"></i>Get artist image
-              </button>
-            </form>
+            <button class="btn btn-outline-primary" type="submit" name="action" value="cache_external_image" <?= $imgIsExternal ? '' : 'disabled aria-disabled="true"' ?> title="<?= e($imgIsExternal ? 'Download and store the external image locally' : 'Set an external Image URL first') ?>">
+              <i class="bi bi-download me-1" aria-hidden="true"></i>Get artist image
+            </button>
           </div>
         </form>
       </div>
