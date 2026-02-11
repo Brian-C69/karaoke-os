@@ -2,7 +2,7 @@
 
 Simple local-first karaoke library browser + usage tracking.
 
-**Version:** 0.1.47
+**Version:** 0.1.48
 
 ## What it does
 - Public can browse songs (artists, languages, Top 100 rankings).
@@ -18,6 +18,16 @@ Admin only needs to enter:
 - Google Drive File URL/ID
 
 The app auto-fetches album + cover via iTunes (fallback: MusicBrainz) and warns about duplicates before saving.
+
+## Maintenance (backfill metadata)
+Some metadata is fetched lazily when songs/artists are added. To retroactively fill missing `genre`/`year` and artist images, run:
+
+- Fill missing song `genre/year` + fetch missing artist images + cache external images locally:
+  - `php scripts/backfill-metadata.php --songs --artists --cache-artists --limit=300 --sleep-ms=250`
+- Preview what would change (no DB writes):
+  - `php scripts/backfill-metadata.php --songs --artists --cache-artists --dry-run`
+- Force overwrite `genre/year` (songs only):
+  - `php scripts/backfill-metadata.php --songs --force --limit=200`
 
 ## Setup (XAMPP)
 1. Ensure Apache is running in XAMPP.
