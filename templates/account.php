@@ -117,10 +117,12 @@
       <div class="col-12">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
           <a class="btn btn-outline-secondary" href="<?= e(APP_BASE) ?>/?r=/usage"><i class="bi bi-activity me-1" aria-hidden="true"></i>Usage</a>
-          <form method="post" action="<?= e(APP_BASE) ?>/?r=/account/send-verification" class="m-0">
-            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-            <button class="btn btn-primary" <?= !empty($userFull['email_verified_at']) ? 'disabled' : '' ?>><i class="bi bi-send me-1" aria-hidden="true"></i>Send verification email</button>
-          </form>
+          <?php if (empty($userFull['email_verified_at'])): ?>
+            <form method="post" action="<?= e(APP_BASE) ?>/?r=/account/send-verification" class="m-0">
+              <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+              <button class="btn btn-primary"><i class="bi bi-send me-1" aria-hidden="true"></i>Send verification email</button>
+            </form>
+          <?php endif; ?>
         </div>
       </div>
     </div>
