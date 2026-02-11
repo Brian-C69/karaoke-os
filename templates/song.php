@@ -93,6 +93,8 @@ if (!empty($artistRow) && is_array($artistRow)) {
             <?php endif; ?>
           </div>
           <div class="col-6"><span class="text-muted">Album:</span> <?= e((string)($song['album'] ?? '')) ?: '—' ?></div>
+          <div class="col-6"><span class="text-muted">Genre:</span> <?= e((string)($song['genre'] ?? '')) ?: '—' ?></div>
+          <div class="col-6"><span class="text-muted">Year:</span> <?= e((string)($song['year'] ?? '')) ?: '—' ?></div>
           <div class="col-6"><span class="text-muted">Plays:</span> <?= (int)$playCount ?></div>
         </div>
 
