@@ -81,8 +81,10 @@
         <div class="fw-semibold"><i class="bi bi-moon-stars me-2" aria-hidden="true"></i>Theme</div>
         <div class="text-muted small">Light / Dark mode</div>
       </div>
-      <button type="button" class="btn btn-outline-secondary" data-theme-toggle>
-        <i class="bi bi-moon-stars-fill me-1" aria-hidden="true"></i>Toggle
+      <button type="button" class="btn btn-outline-secondary theme-toggle-btn" data-theme-toggle>
+        <i class="bi bi-moon-stars-fill me-1 theme-icon-light" aria-hidden="true"></i>
+        <i class="bi bi-sun-fill me-1 theme-icon-dark" aria-hidden="true"></i>
+        Toggle
       </button>
     </div>
   </div>

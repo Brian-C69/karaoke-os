@@ -34,12 +34,8 @@
   const updateToggle = (btn, theme) => {
     if (!btn) return;
     const isDark = theme === 'dark';
-    btn.classList.toggle('btn-outline-light', isDark);
-    btn.classList.toggle('btn-outline-secondary', !isDark);
     btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
     btn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
-    const icon = btn.querySelector('i');
-    if (icon) icon.className = `bi ${isDark ? 'bi-sun-fill' : 'bi-moon-stars-fill'}`;
   };
 
   document.addEventListener('DOMContentLoaded', () => {

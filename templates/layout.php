@@ -126,8 +126,9 @@
             <li class="nav-item"><a class="nav-link" href="<?= e(APP_BASE) ?>/?r=/login"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Login</a></li>
           <?php endif; ?>
           <li class="nav-item d-flex align-items-center ms-lg-2">
-            <button type="button" class="btn btn-sm btn-outline-light" data-theme-toggle aria-label="Toggle theme" title="Toggle theme">
-              <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+            <button type="button" class="btn btn-sm btn-outline-secondary theme-toggle-btn" data-theme-toggle aria-label="Toggle theme" title="Toggle theme">
+              <i class="bi bi-moon-stars-fill theme-icon-light" aria-hidden="true"></i>
+              <i class="bi bi-sun-fill theme-icon-dark" aria-hidden="true"></i>
             </button>
           </li>
         </ul>
