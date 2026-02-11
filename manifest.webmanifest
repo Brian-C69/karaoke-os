@@ -1,0 +1,22 @@
+{
+  "name": "Karaoke OS",
+  "short_name": "Karaoke OS",
+  "description": "Local-first karaoke library browser + usage tracking.",
+  "start_url": "./?r=/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#212529",
+  "theme_color": "#212529",
+  "icons": [
+    {
+      "src": "./assets/img/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/img/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
