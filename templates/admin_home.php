@@ -6,7 +6,7 @@
 <div class="row g-3">
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/songs">
-      <div class="card-body text-center">
+      <div class="card-body text-center py-4">
         <div class="mb-2"><i class="bi bi-music-note-beamed" aria-hidden="true" style="font-size:1.75rem;"></i></div>
         <div class="fw-semibold">Songs</div>
         <div class="text-muted small mt-1">Add/edit songs and Drive links.</div>
@@ -15,7 +15,7 @@
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/users">
-      <div class="card-body text-center">
+      <div class="card-body text-center py-4">
         <div class="mb-2"><i class="bi bi-people" aria-hidden="true" style="font-size:1.75rem;"></i></div>
         <div class="fw-semibold">Users</div>
         <div class="text-muted small mt-1">Create user/admin accounts.</div>
@@ -24,7 +24,7 @@
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/analytics">
-      <div class="card-body text-center">
+      <div class="card-body text-center py-4">
         <div class="mb-2"><i class="bi bi-graph-up" aria-hidden="true" style="font-size:1.75rem;"></i></div>
         <div class="fw-semibold">Analytics</div>
         <div class="text-muted small mt-1">Top songs and artists by plays.</div>
@@ -33,7 +33,7 @@
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/email">
-      <div class="card-body text-center">
+      <div class="card-body text-center py-4">
         <div class="mb-2"><i class="bi bi-envelope-at" aria-hidden="true" style="font-size:1.75rem;"></i></div>
         <div class="fw-semibold">Email</div>
         <div class="text-muted small mt-1">Configure verification emails.</div>
@@ -42,7 +42,7 @@
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/artists">
-      <div class="card-body text-center">
+      <div class="card-body text-center py-4">
         <div class="mb-2"><i class="bi bi-person-lines-fill" aria-hidden="true" style="font-size:1.75rem;"></i></div>
         <div class="fw-semibold">Artists</div>
         <div class="text-muted small mt-1">Manage artist images.</div>
@@ -51,7 +51,7 @@
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/tools">
-      <div class="card-body text-center">
+      <div class="card-body text-center py-4">
         <div class="mb-2"><i class="bi bi-tools" aria-hidden="true" style="font-size:1.75rem;"></i></div>
         <div class="fw-semibold">Tools</div>
         <div class="text-muted small mt-1">Import/export and backups.</div>

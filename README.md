@@ -2,7 +2,7 @@
 
 Simple local-first karaoke library browser + usage tracking.
 
-**Version:** 0.1.105
+**Version:** 0.1.106
 
 ## What it does
 - Public can browse songs (artists, languages, Top 100 rankings).
