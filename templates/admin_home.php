@@ -6,49 +6,55 @@
 <div class="row g-3">
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/songs">
-      <div class="card-body">
-        <div class="fw-semibold"><i class="bi bi-music-note-beamed me-2" aria-hidden="true"></i>Songs</div>
-        <div class="text-muted small">Add/edit songs and Drive links.</div>
+      <div class="card-body text-center">
+        <div class="mb-2"><i class="bi bi-music-note-beamed" aria-hidden="true" style="font-size:1.75rem;"></i></div>
+        <div class="fw-semibold">Songs</div>
+        <div class="text-muted small mt-1">Add/edit songs and Drive links.</div>
       </div>
     </a>
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/users">
-      <div class="card-body">
-        <div class="fw-semibold"><i class="bi bi-people me-2" aria-hidden="true"></i>Users</div>
-        <div class="text-muted small">Create user/admin accounts.</div>
+      <div class="card-body text-center">
+        <div class="mb-2"><i class="bi bi-people" aria-hidden="true" style="font-size:1.75rem;"></i></div>
+        <div class="fw-semibold">Users</div>
+        <div class="text-muted small mt-1">Create user/admin accounts.</div>
       </div>
     </a>
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/analytics">
-      <div class="card-body">
-        <div class="fw-semibold"><i class="bi bi-graph-up me-2" aria-hidden="true"></i>Analytics</div>
-        <div class="text-muted small">Top songs and artists by plays.</div>
+      <div class="card-body text-center">
+        <div class="mb-2"><i class="bi bi-graph-up" aria-hidden="true" style="font-size:1.75rem;"></i></div>
+        <div class="fw-semibold">Analytics</div>
+        <div class="text-muted small mt-1">Top songs and artists by plays.</div>
       </div>
     </a>
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/email">
-      <div class="card-body">
-        <div class="fw-semibold"><i class="bi bi-envelope-at me-2" aria-hidden="true"></i>Email</div>
-        <div class="text-muted small">Configure verification emails.</div>
+      <div class="card-body text-center">
+        <div class="mb-2"><i class="bi bi-envelope-at" aria-hidden="true" style="font-size:1.75rem;"></i></div>
+        <div class="fw-semibold">Email</div>
+        <div class="text-muted small mt-1">Configure verification emails.</div>
       </div>
     </a>
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/artists">
-      <div class="card-body">
-        <div class="fw-semibold"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Artists</div>
-        <div class="text-muted small">Manage artist images.</div>
+      <div class="card-body text-center">
+        <div class="mb-2"><i class="bi bi-person-lines-fill" aria-hidden="true" style="font-size:1.75rem;"></i></div>
+        <div class="fw-semibold">Artists</div>
+        <div class="text-muted small mt-1">Manage artist images.</div>
       </div>
     </a>
   </div>
   <div class="col-md-4">
     <a class="card h-100 shadow-sm text-decoration-none" href="<?= e(APP_BASE) ?>/?r=/admin/tools">
-      <div class="card-body">
-        <div class="fw-semibold"><i class="bi bi-tools me-2" aria-hidden="true"></i>Tools</div>
-        <div class="text-muted small">Import/export and backups.</div>
+      <div class="card-body text-center">
+        <div class="mb-2"><i class="bi bi-tools" aria-hidden="true" style="font-size:1.75rem;"></i></div>
+        <div class="fw-semibold">Tools</div>
+        <div class="text-muted small mt-1">Import/export and backups.</div>
       </div>
     </a>
   </div>
