@@ -36,6 +36,10 @@ function href_with(array $params): string {
           <div class="home-tile-icon"><i class="bi bi-heart-fill" aria-hidden="true"></i></div>
           <div class="home-tile-label">Most liked</div>
         </a>
+        <a class="home-tile tile-contact" href="<?= e(APP_BASE) ?>/?r=/contact">
+          <div class="home-tile-icon"><i class="bi bi-chat-dots" aria-hidden="true"></i></div>
+          <div class="home-tile-label">Contact</div>
+        </a>
 
         <?php if (!empty($user)): ?>
           <a class="home-tile tile-recent" href="<?= e(APP_BASE) ?>/?r=/recent">

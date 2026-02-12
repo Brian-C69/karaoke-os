@@ -184,6 +184,89 @@ switch ($route) {
         redirect('/?r=/account');
         break;
 
+    case '/contact':
+        $user = current_user();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_verify();
+
+            $hp = trim((string)($_POST['website'] ?? ''));
+            if ($hp !== '') {
+                flash('success', 'Message sent.');
+                redirect('/?r=/contact');
+            }
+
+            if (!isset($_SESSION['contact_last_at'])) {
+                $_SESSION['contact_last_at'] = 0;
+            }
+            $last = (int)$_SESSION['contact_last_at'];
+            if ($last > 0 && (time() - $last) < 20) {
+                flash('warning', 'Please wait a moment before sending again.');
+                redirect('/?r=/contact');
+            }
+            $_SESSION['contact_last_at'] = time();
+
+            $type = trim((string)($_POST['type'] ?? ''));
+            $allowed = ['Issue' => true, 'Song request' => true, 'Feedback' => true];
+            if (!isset($allowed[$type])) {
+                flash('danger', 'Invalid type.');
+                redirect('/?r=/contact');
+            }
+
+            $fromName = trim((string)($_POST['from_name'] ?? ''));
+            $fromEmail = trim((string)($_POST['from_email'] ?? ''));
+            if ($fromEmail !== '' && !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+                flash('danger', 'Please enter a valid email (or leave it blank).');
+                redirect('/?r=/contact');
+            }
+
+            $songTitle = trim((string)($_POST['song_title'] ?? ''));
+            $songArtist = trim((string)($_POST['song_artist'] ?? ''));
+            $songLink = trim((string)($_POST['song_link'] ?? ''));
+            if ($songLink !== '' && !is_safe_external_url($songLink)) {
+                $songLink = '';
+            }
+
+            $message = trim((string)($_POST['message'] ?? ''));
+            if (function_exists('mb_substr')) {
+                $message = mb_substr($message, 0, 4000);
+            } else {
+                $message = substr($message, 0, 4000);
+            }
+            if (strlen($message) < 5) {
+                flash('danger', 'Message is too short.');
+                redirect('/?r=/contact');
+            }
+
+            if ($user) {
+                if ($fromName === '') $fromName = (string)($user['username'] ?? '');
+                if ($fromEmail === '') $fromEmail = (string)($user['email'] ?? '');
+            }
+
+            try {
+                send_contact_form_email($db, [
+                    'type' => $type,
+                    'message' => $message,
+                    'song_title' => $songTitle,
+                    'song_artist' => $songArtist,
+                    'song_link' => $songLink,
+                    'from_name' => $fromName,
+                    'from_email' => $fromEmail,
+                    'username' => $user ? (string)($user['username'] ?? '') : '',
+                    'user_id' => $user ? (int)($user['id'] ?? 0) : 0,
+                    'ip' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+                    'ua' => (string)($_SERVER['HTTP_USER_AGENT'] ?? ''),
+                ]);
+                flash('success', 'Message sent.');
+            } catch (Throwable $e) {
+                flash('danger', 'Could not send message. Ask admin to configure SMTP + contact email.');
+            }
+            redirect('/?r=/contact');
+        }
+
+        $pageTitle = 'Contact';
+        render('contact');
+        break;
+
     case '/songs':
         $pageTitle = 'Songs';
         $filters = [
@@ -1929,6 +2012,8 @@ switch ($route) {
             set_setting($db, 'smtp_password', (string)($_POST['smtp_password'] ?? ''));
             set_setting($db, 'smtp_from_email', trim((string)($_POST['smtp_from_email'] ?? EMAIL_FROM)));
             set_setting($db, 'smtp_from_name', trim((string)($_POST['smtp_from_name'] ?? 'Karaoke OS')));
+            set_setting($db, 'contact_to_email', trim((string)($_POST['contact_to_email'] ?? '')));
+            set_setting($db, 'contact_to_name', trim((string)($_POST['contact_to_name'] ?? '')));
 
             if (isset($_POST['send_test'])) {
                 $to = trim((string)($_POST['test_to'] ?? ''));
@@ -1949,8 +2034,12 @@ switch ($route) {
         }
 
         $pageTitle = 'Admin · Email (SMTP)';
+        $smtp = get_smtp_settings($db);
+        $contact = get_contact_settings($db);
+        $smtp['contact_to_email'] = (string)($contact['to_email'] ?? '');
+        $smtp['contact_to_name'] = (string)($contact['to_name'] ?? '');
         render('admin_email', [
-            'smtp' => get_smtp_settings($db),
+            'smtp' => $smtp,
         ]);
         break;
 

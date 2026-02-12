@@ -60,6 +60,20 @@
             <button class="btn btn-outline-primary" name="send_test" value="1"><i class="bi bi-send me-1" aria-hidden="true"></i>Send test</button>
           </div>
         </div>
+
+        <div class="col-12">
+          <hr class="my-2">
+          <div class="fw-semibold mb-2"><i class="bi bi-chat-dots me-2" aria-hidden="true"></i>Contact form</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Send contact form to (email)</label>
+          <input class="form-control" name="contact_to_email" value="<?= e((string)($smtp['contact_to_email'] ?? '')) ?>" placeholder="you@example.com">
+          <div class="text-muted small mt-1">Used for issues + song requests.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Recipient name (optional)</label>
+          <input class="form-control" name="contact_to_name" value="<?= e((string)($smtp['contact_to_name'] ?? '')) ?>" placeholder="Admin">
+        </div>
       </div>
 
       <div class="mt-3 d-flex gap-2">

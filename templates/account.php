@@ -54,6 +54,10 @@
       <span><i class="bi bi-activity me-2" aria-hidden="true"></i>Usage</span>
       <i class="bi bi-chevron-right text-muted" aria-hidden="true"></i>
     </a>
+    <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-3" href="<?= e(APP_BASE) ?>/?r=/contact">
+      <span><i class="bi bi-chat-dots me-2" aria-hidden="true"></i>Contact</span>
+      <i class="bi bi-chevron-right text-muted" aria-hidden="true"></i>
+    </a>
     <?php if (((string)($userFull['role'] ?? '')) === 'admin'): ?>
       <a class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-3" href="<?= e(APP_BASE) ?>/?r=/admin">
         <span><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Admin</span>

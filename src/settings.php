@@ -37,3 +37,10 @@ function get_smtp_settings(PDO $db): array
     ];
 }
 
+function get_contact_settings(PDO $db): array
+{
+    return [
+        'to_email' => (string)(get_setting($db, 'contact_to_email', '') ?? ''),
+        'to_name' => (string)(get_setting($db, 'contact_to_name', '') ?? ''),
+    ];
+}
